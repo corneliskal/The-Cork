@@ -1202,6 +1202,8 @@ class WineCellar {
     }
 
     populateForm(data) {
+        console.log('📝 populateForm received data:', JSON.stringify(data, null, 2));
+
         document.getElementById('wineName').value = data.name || '';
         document.getElementById('wineProducer').value = data.producer || '';
         document.getElementById('wineType').value = data.type || 'red';
@@ -1209,14 +1211,18 @@ class WineCellar {
         document.getElementById('wineRegion').value = data.region || '';
         document.getElementById('wineGrape').value = data.grape || '';
 
-        // Handle price - can be number or string like "€25-30"
+        // Handle price - can be number or string like "€25-30" or "25-40 euros"
         let priceValue = data.price || data.estimatedPrice || '';
-        if (typeof priceValue === 'string') {
-            // Extract first number from string like "€25-30" or "25 euros"
-            const priceMatch = priceValue.match(/(\d+)/);
-            priceValue = priceMatch ? priceMatch[1] : '';
+        console.log('💰 Raw price value:', priceValue, 'Type:', typeof priceValue);
+        if (priceValue) {
+            if (typeof priceValue === 'string') {
+                // Extract first number from string like "€25-30" or "25 euros"
+                const priceMatch = priceValue.match(/(\d+)/);
+                priceValue = priceMatch ? priceMatch[1] : '';
+            }
+            document.getElementById('winePrice').value = priceValue;
+            console.log('💰 Parsed price:', priceValue);
         }
-        document.getElementById('winePrice').value = priceValue;
 
         document.getElementById('drinkFrom').value = data.drinkFrom || '';
         document.getElementById('drinkUntil').value = data.drinkUntil || '';
@@ -1229,9 +1235,11 @@ class WineCellar {
 
         // Support both flat and nested characteristics from AI
         const chars = data.characteristics || {};
+        console.log('📊 Characteristics:', chars);
         ['boldness', 'tannins', 'acidity'].forEach(id => {
             // Check nested first (AI response), then flat (demo data)
             const value = chars[id] || data[id] || 3;
+            console.log(`📊 ${id}:`, value);
             document.getElementById(id).value = value;
             document.getElementById(`${id}Value`).textContent = value;
         });
