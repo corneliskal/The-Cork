@@ -6,10 +6,8 @@ const cors = require('cors')({ origin: true });
 admin.initializeApp();
 
 // Get API keys from Firebase environment config
-// Set these with: firebase functions:config:set gemini.key="AIza..." google.apikey="AIza..." google.cx="..."
+// Set these with: firebase functions:config:set gemini.key="AIza..."
 const getGeminiKey = () => functions.config().gemini?.key;
-const getGoogleApiKey = () => functions.config().google?.apikey;
-const getGoogleCx = () => functions.config().google?.cx;
 
 // Middleware to verify Firebase Auth
 const verifyAuth = async (req, res) => {
@@ -233,76 +231,12 @@ If you cannot find a reliable price, return:
 });
 
 // ================================
-// Google Image Search - Find Wine Image
-// ================================
-exports.searchWineImage = functions.https.onRequest(async (req, res) => {
-    // CORS headers
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    if (req.method === 'OPTIONS') {
-        res.status(204).send('');
-        return;
-    }
-
-    if (req.method !== 'POST') {
-        res.status(405).json({ error: 'Method not allowed' });
-        return;
-    }
-
-    // Verify user is authenticated
-    const user = await verifyAuth(req, res);
-    if (!user) return;
-
-    const googleApiKey = getGoogleApiKey();
-    const googleCx = getGoogleCx();
-
-    if (!googleApiKey || !googleCx) {
-        // Return null image - the app will use the user's photo instead
-        res.json({ success: true, imageUrl: null, message: 'Google Image Search not configured' });
-        return;
-    }
-
-    try {
-        const { query, type } = req.body;
-        if (!query) {
-            res.status(400).json({ error: 'No search query provided' });
-            return;
-        }
-
-        // Include wine type in search for better accuracy (red/white/rosé/sparkling)
-        const wineType = type || '';
-        const typeKeyword = wineType === 'rosé' ? 'rosé wine' :
-                           wineType === 'sparkling' ? 'sparkling wine champagne' :
-                           wineType === 'dessert' ? 'dessert wine' :
-                           wineType ? `${wineType} wine` : 'wine';
-        const searchQuery = `${query} ${typeKeyword} bottle`;
-        const url = `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleCx}&q=${encodeURIComponent(searchQuery)}&searchType=image&num=1&imgType=photo`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.items && data.items.length > 0) {
-            res.json({ success: true, imageUrl: data.items[0].link });
-        } else {
-            res.json({ success: true, imageUrl: null, message: 'No images found' });
-        }
-
-    } catch (error) {
-        console.error('Google search error:', error);
-        res.status(500).json({ error: 'Failed to search images', message: error.message });
-    }
-});
-
-// ================================
 // Health check endpoint
 // ================================
 exports.health = functions.https.onRequest((req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.json({
         status: 'ok',
-        geminiConfigured: !!getGeminiKey(),
-        googleConfigured: !!(getGoogleApiKey() && getGoogleCx())
+        geminiConfigured: !!getGeminiKey()
     });
 });

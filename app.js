@@ -1013,30 +1013,13 @@ class WineCellar {
                     if (priceData && priceData.price) {
                         document.getElementById('winePrice').value = Math.round(priceData.price);
                         console.log('💰 Gemini price:', priceData.price, 'Source:', priceData.source);
-                        console.log('🍷 Price data applied:', priceData);
                     }
                 } catch (priceError) {
                     console.log('Price lookup failed:', priceError);
                 }
             }
 
-            // Zoek productfoto via Cloud Function
-            if (wineData.name && wineData.producer) {
-                indicatorText.textContent = 'Zoeken naar productfoto...';
-                try {
-                    const productImage = await this.searchGoogleImage(wineData);
-                    if (productImage) {
-                        this.showToast('Wijn herkend met productfoto!');
-                    } else {
-                        this.showToast('Wijn herkend! Geen productfoto gevonden.');
-                    }
-                } catch (imgError) {
-                    console.log('Could not load product image:', imgError);
-                    this.showToast('Wijn herkend! Productfoto niet beschikbaar.');
-                }
-            } else {
-                this.showToast('Wijn herkend! Controleer de gegevens.');
-            }
+            this.showToast('Wijn herkend!');
 
             indicator.classList.add('hidden');
         } catch (error) {
@@ -1098,63 +1081,6 @@ class WineCellar {
             return result.data;
         } catch (error) {
             console.error('Price lookup error:', error);
-            return null;
-        }
-    }
-
-    async searchGoogleImage(wineData) {
-        // Use Cloud Function for Google Image Search (keys are stored securely on server)
-        // The Cloud Function fetches the image and returns it as base64 to avoid CORS issues
-        if (!CONFIG.FUNCTIONS?.searchWineImage) {
-            console.log('Google Image Search not configured');
-            return null;
-        }
-
-        const idToken = await this.getIdToken();
-        if (!idToken) {
-            console.log('Not authenticated for image search');
-            return null;
-        }
-
-        const searchQuery = `${wineData.producer} ${wineData.name}`;
-        const wineType = wineData.type || 'red';
-        console.log('🔍 Google Image Search Query:', searchQuery, 'Type:', wineType);
-
-        try {
-            const response = await fetch(CONFIG.FUNCTIONS.searchWineImage, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: JSON.stringify({ query: searchQuery, type: wineType })
-            });
-
-            if (!response.ok) {
-                console.error('❌ Google Image Search API error:', response.status);
-                return null;
-            }
-
-            const result = await response.json();
-            console.log('📦 searchWineImage response:', JSON.stringify(result).substring(0, 200));
-
-            // The Cloud Function now returns base64 encoded image directly
-            if (result.imageBase64) {
-                console.log('✅ Found image (base64)');
-                // Update the preview with the base64 image
-                this.currentImage = result.imageBase64;
-                const preview = document.getElementById('previewImg');
-                if (preview) {
-                    preview.src = result.imageBase64;
-                    document.getElementById('imagePreview')?.classList.add('has-image');
-                }
-                return result.imageBase64;
-            }
-
-            console.log('⚠️ No image found:', result.message);
-            return null;
-        } catch (error) {
-            console.error('❌ Google Image Search error:', error);
             return null;
         }
     }

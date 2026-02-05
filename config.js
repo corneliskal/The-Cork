@@ -22,7 +22,6 @@ const CONFIG = {
     // ============================
     FUNCTIONS: {
         analyzeWineLabel: "https://us-central1-the-cork-claude.cloudfunctions.net/analyzeWineLabel",
-        searchWineImage: "https://us-central1-the-cork-claude.cloudfunctions.net/searchWineImage",
         lookupWinePrice: "https://us-central1-the-cork-claude.cloudfunctions.net/lookupWinePrice",
         health: "https://us-central1-the-cork-claude.cloudfunctions.net/health"
     }
