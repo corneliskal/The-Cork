@@ -257,7 +257,7 @@ class WineCellar {
         try {
             const response = await fetch(CONFIG.FUNCTIONS.health);
             const data = await response.json();
-            this.cloudFunctionsAvailable = data.status === 'ok' && data.openaiConfigured;
+            this.cloudFunctionsAvailable = data.status === 'ok' && (data.geminiConfigured || data.openaiConfigured);
             console.log('Cloud Functions status:', data);
         } catch (error) {
             console.log('Cloud Functions not available:', error.message);
@@ -1005,6 +1005,21 @@ class WineCellar {
             const wineData = await this.callChatGPTVision(imageData);
             this.populateForm(wineData);
 
+            // Zoek prijs via Gemini met Google Search
+            if (wineData.name) {
+                indicatorText.textContent = 'Zoeken naar prijsinformatie...';
+                try {
+                    const priceData = await this.lookupWinePrice(wineData);
+                    if (priceData && priceData.price) {
+                        document.getElementById('winePrice').value = Math.round(priceData.price);
+                        console.log('💰 Gemini price:', priceData.price, 'Source:', priceData.source);
+                        console.log('🍷 Price data applied:', priceData);
+                    }
+                } catch (priceError) {
+                    console.log('Price lookup failed:', priceError);
+                }
+            }
+
             // Zoek productfoto via Cloud Function
             if (wineData.name && wineData.producer) {
                 indicatorText.textContent = 'Zoeken naar productfoto...';
@@ -1037,6 +1052,53 @@ class WineCellar {
             } else {
                 this.showToast('Kan afbeelding niet analyseren. Voer handmatig in.');
             }
+        }
+    }
+
+    async lookupWinePrice(wineData) {
+        console.log('🍷 Starting Gemini price lookup for:', wineData.name, wineData.producer, wineData.year);
+
+        // Use Cloud Function to lookup wine price via Gemini with Google Search
+        if (!CONFIG.FUNCTIONS?.lookupWinePrice) {
+            console.log('❌ Price lookup not configured in CONFIG');
+            return null;
+        }
+
+        console.log('🍷 Price endpoint:', CONFIG.FUNCTIONS.lookupWinePrice);
+
+        const idToken = await this.getIdToken();
+        if (!idToken) {
+            console.log('Not authenticated for price lookup');
+            return null;
+        }
+
+        try {
+            const response = await fetch(CONFIG.FUNCTIONS.lookupWinePrice, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    name: wineData.name,
+                    producer: wineData.producer,
+                    year: wineData.year,
+                    region: wineData.region
+                })
+            });
+
+            if (!response.ok) {
+                console.error('Price lookup API error:', response.status);
+                return null;
+            }
+
+            const result = await response.json();
+            console.log('🍷 Price lookup result:', result);
+
+            return result.data;
+        } catch (error) {
+            console.error('Price lookup error:', error);
+            return null;
         }
     }
 

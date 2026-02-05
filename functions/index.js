@@ -1,12 +1,13 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const cors = require('cors')({ origin: true });
 
 admin.initializeApp();
 
 // Get API keys from Firebase environment config
-// Set these with: firebase functions:config:set openai.key="sk-..." google.apikey="AIza..." google.cx="..."
-const getOpenAIKey = () => functions.config().openai?.key;
+// Set these with: firebase functions:config:set gemini.key="AIza..." google.apikey="AIza..." google.cx="..."
+const getGeminiKey = () => functions.config().gemini?.key;
 const getGoogleApiKey = () => functions.config().google?.apikey;
 const getGoogleCx = () => functions.config().google?.cx;
 
@@ -30,7 +31,7 @@ const verifyAuth = async (req, res) => {
 };
 
 // ================================
-// OpenAI Vision API - Analyze Wine Label
+// Gemini Vision API - Analyze Wine Label
 // ================================
 exports.analyzeWineLabel = functions.https.onRequest(async (req, res) => {
     // CORS headers
@@ -52,9 +53,9 @@ exports.analyzeWineLabel = functions.https.onRequest(async (req, res) => {
     const user = await verifyAuth(req, res);
     if (!user) return;
 
-    const openaiKey = getOpenAIKey();
-    if (!openaiKey) {
-        res.status(500).json({ error: 'OpenAI API not configured' });
+    const geminiKey = getGeminiKey();
+    if (!geminiKey) {
+        res.status(500).json({ error: 'Gemini API not configured' });
         return;
     }
 
@@ -65,17 +66,22 @@ exports.analyzeWineLabel = functions.https.onRequest(async (req, res) => {
             return;
         }
 
-        const openai = new OpenAI({ apiKey: openaiKey });
+        // Initialize Gemini
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "user",
-                    content: [
-                        {
-                            type: "text",
-                            text: `Analyze this wine label image and extract the following information in JSON format:
+        // Extract base64 data (remove data URL prefix if present)
+        let base64Data = imageBase64;
+        let mimeType = 'image/jpeg';
+        if (imageBase64.startsWith('data:')) {
+            const matches = imageBase64.match(/^data:([^;]+);base64,(.+)$/);
+            if (matches) {
+                mimeType = matches[1];
+                base64Data = matches[2];
+            }
+        }
+
+        const prompt = `Analyze this wine label image and extract the following information in JSON format:
 {
     "name": "wine name",
     "producer": "producer/house name",
@@ -88,8 +94,7 @@ exports.analyzeWineLabel = functions.https.onRequest(async (req, res) => {
         "tannins": 1-5,
         "acidity": 1-5
     },
-    "notes": "brief tasting notes or description",
-    "estimatedPrice": "estimated price range in euros",
+    "notes": "brief tasting notes or description based on the wine style",
     "drinkFrom": year as number (estimated optimal drinking window start),
     "drinkUntil": year as number (estimated optimal drinking window end)
 }
@@ -104,21 +109,20 @@ For drinkFrom and drinkUntil, estimate based on wine type, grape variety, region
 - Dessert wines: 5-50+ years depending on quality
 
 If you cannot determine a value, use null. For type, make your best guess based on the wine name/region.
-Only respond with the JSON, no other text.`
-                        },
-                        {
-                            type: "image_url",
-                            image_url: {
-                                url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens: 1000
-        });
+Only respond with the JSON, no other text.`;
 
-        const content = response.choices[0].message.content;
+        const result = await model.generateContent([
+            prompt,
+            {
+                inlineData: {
+                    mimeType: mimeType,
+                    data: base64Data
+                }
+            }
+        ]);
+
+        const content = result.response.text();
+        console.log('Gemini response:', content);
 
         // Parse JSON from response
         let wineData;
@@ -139,9 +143,93 @@ Only respond with the JSON, no other text.`
         res.json({ success: true, data: wineData });
 
     } catch (error) {
-        console.error('OpenAI error:', error);
+        console.error('Gemini error:', error);
         res.status(500).json({ error: 'Failed to analyze image', message: error.message });
     }
+});
+
+// ================================
+// Gemini Price Lookup - Get wine price using Google Search grounding
+// ================================
+exports.lookupWinePrice = functions.https.onRequest((req, res) => {
+    cors(req, res, async () => {
+        if (req.method !== 'POST') {
+            res.status(405).json({ error: 'Method not allowed' });
+            return;
+        }
+
+        // Verify user is authenticated
+        const user = await verifyAuth(req, res);
+        if (!user) return;
+
+        const geminiKey = getGeminiKey();
+        if (!geminiKey) {
+            res.json({ success: true, data: null, message: 'Gemini API not configured' });
+            return;
+        }
+
+        try {
+            const { name, producer, year, region } = req.body;
+            if (!name) {
+                res.status(400).json({ error: 'Wine name is required' });
+                return;
+            }
+
+            // Build search query
+            const searchTerms = [producer, name, year, region].filter(Boolean).join(' ');
+            console.log('🍷 Gemini price lookup for:', searchTerms);
+
+            // Initialize Gemini with Google Search grounding
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            const model = genAI.getGenerativeModel({
+                model: 'gemini-2.0-flash',
+                tools: [{
+                    googleSearch: {}
+                }]
+            });
+
+            const prompt = `Search for the current retail price of this wine: "${searchTerms}"
+
+Look for prices on wine retailers, Vivino, Wine-Searcher, or other wine shops.
+Focus on European/Dutch prices in EUR (€).
+
+Return ONLY a JSON object with this format, no other text:
+{
+    "price": number (average price in EUR, just the number without currency symbol),
+    "priceRange": "€X - €Y" (price range if found),
+    "source": "where you found the price",
+    "confidence": "high/medium/low"
+}
+
+If you cannot find a reliable price, return:
+{"price": null, "source": "not found", "confidence": "low"}`;
+
+            const result = await model.generateContent(prompt);
+            const content = result.response.text();
+            console.log('Gemini price response:', content);
+
+            // Parse JSON from response
+            let priceData = null;
+            try {
+                const jsonMatch = content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    priceData = JSON.parse(jsonMatch[0]);
+                }
+            } catch (parseError) {
+                console.error('Price JSON parse error:', parseError);
+            }
+
+            res.json({
+                success: true,
+                data: priceData,
+                searchTerms: searchTerms
+            });
+
+        } catch (error) {
+            console.error('Gemini price lookup error:', error);
+            res.json({ success: true, data: null, message: error.message });
+        }
+    });
 });
 
 // ================================
@@ -214,7 +302,7 @@ exports.health = functions.https.onRequest((req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.json({
         status: 'ok',
-        openaiConfigured: !!getOpenAIKey(),
+        geminiConfigured: !!getGeminiKey(),
         googleConfigured: !!(getGoogleApiKey() && getGoogleCx())
     });
 });
