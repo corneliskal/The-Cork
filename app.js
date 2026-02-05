@@ -4,6 +4,207 @@
 // And Firebase Cloud Sync
 // ============================
 
+// ============================
+// SwipeHandler - iOS-style swipe gestures
+// ============================
+
+class SwipeHandler {
+    constructor(options) {
+        this.container = options.container;
+        this.onAction = options.onAction;
+        this.actionWidth = options.actionWidth || 80;
+        this.fullSwipeThreshold = 0.45; // 45% of width for full swipe
+        this.velocityThreshold = 0.5; // pixels per ms
+
+        this.currentOpenItem = null;
+        this.activeItem = null;
+        this.startX = 0;
+        this.startY = 0;
+        this.currentX = 0;
+        this.startTime = 0;
+        this.isScrolling = null; // null = undetermined, true = vertical scroll, false = horizontal swipe
+
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        // Use event delegation on the container
+        this.container.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
+        this.container.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.container.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
+
+        // Close open item when clicking elsewhere
+        document.addEventListener('touchstart', (e) => {
+            if (this.currentOpenItem && !this.container.contains(e.target)) {
+                this.closeCurrentItem();
+            }
+        }, { passive: true });
+    }
+
+    handleTouchStart(e) {
+        const swipeContent = e.target.closest('.swipe-content');
+        if (!swipeContent) return;
+
+        const swipeContainer = swipeContent.closest('.swipe-container');
+        if (!swipeContainer) return;
+
+        // Close any other open item
+        if (this.currentOpenItem && this.currentOpenItem !== swipeContainer) {
+            this.closeCurrentItem();
+        }
+
+        this.activeItem = swipeContainer;
+        this.startX = e.touches[0].clientX;
+        this.startY = e.touches[0].clientY;
+        this.currentX = 0;
+        this.startTime = Date.now();
+        this.isScrolling = null;
+
+        // Remove transition during drag
+        swipeContent.classList.remove('swipe-transitioning');
+        this.activeItem.classList.add('swiping');
+    }
+
+    handleTouchMove(e) {
+        if (!this.activeItem) return;
+
+        const swipeContent = this.activeItem.querySelector('.swipe-content');
+        if (!swipeContent) return;
+
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
+        const deltaX = touchX - this.startX;
+        const deltaY = touchY - this.startY;
+
+        // Determine scroll vs swipe on first significant movement
+        if (this.isScrolling === null) {
+            if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+                this.isScrolling = Math.abs(deltaY) > Math.abs(deltaX);
+            }
+        }
+
+        // If vertical scrolling, don't interfere
+        if (this.isScrolling === true) {
+            this.activeItem = null;
+            return;
+        }
+
+        // Horizontal swipe - prevent page scroll
+        if (this.isScrolling === false) {
+            e.preventDefault();
+        }
+
+        // Calculate how far to move (only allow left swipe)
+        let translateX = deltaX;
+
+        // Check if item was already open
+        if (this.currentOpenItem === this.activeItem) {
+            translateX = deltaX - this.actionWidth;
+        }
+
+        // Limit swipe to left only, with resistance past action width
+        if (translateX > 0) {
+            translateX = 0;
+        } else if (translateX < -this.activeItem.offsetWidth * 0.7) {
+            // Add resistance past 70%
+            const overflow = Math.abs(translateX) - this.activeItem.offsetWidth * 0.7;
+            translateX = -(this.activeItem.offsetWidth * 0.7 + overflow * 0.2);
+        }
+
+        this.currentX = translateX;
+        swipeContent.style.transform = `translateX(${translateX}px)`;
+    }
+
+    handleTouchEnd(e) {
+        if (!this.activeItem) return;
+
+        const swipeContent = this.activeItem.querySelector('.swipe-content');
+        if (!swipeContent) return;
+
+        this.activeItem.classList.remove('swiping');
+        swipeContent.classList.add('swipe-transitioning');
+
+        const itemWidth = this.activeItem.offsetWidth;
+        const velocity = Math.abs(this.currentX) / (Date.now() - this.startTime);
+        const movedPastThreshold = Math.abs(this.currentX) > itemWidth * this.fullSwipeThreshold;
+        const fastSwipe = velocity > this.velocityThreshold && Math.abs(this.currentX) > 50;
+
+        if (movedPastThreshold || fastSwipe) {
+            // Full swipe - trigger action
+            this.triggerAction(this.activeItem);
+        } else if (Math.abs(this.currentX) > this.actionWidth * 0.5) {
+            // Partial swipe - snap open to show action
+            swipeContent.style.transform = `translateX(-${this.actionWidth}px)`;
+            this.currentOpenItem = this.activeItem;
+        } else {
+            // Snap back closed
+            swipeContent.style.transform = 'translateX(0)';
+            if (this.currentOpenItem === this.activeItem) {
+                this.currentOpenItem = null;
+            }
+        }
+
+        this.activeItem = null;
+    }
+
+    triggerAction(item) {
+        const swipeContent = item.querySelector('.swipe-content');
+        const itemWidth = item.offsetWidth;
+
+        // Slide out completely
+        swipeContent.style.transform = `translateX(-${itemWidth}px)`;
+
+        // Collapse the row
+        setTimeout(() => {
+            item.classList.add('swipe-collapsing');
+            item.style.maxHeight = item.offsetHeight + 'px';
+
+            // Force reflow
+            item.offsetHeight;
+
+            item.style.maxHeight = '0';
+
+            // Get the ID and trigger callback
+            const id = item.dataset.id;
+
+            setTimeout(() => {
+                if (this.onAction && id) {
+                    this.onAction(id);
+                }
+            }, 300);
+        }, 200);
+
+        if (this.currentOpenItem === item) {
+            this.currentOpenItem = null;
+        }
+    }
+
+    closeCurrentItem() {
+        if (!this.currentOpenItem) return;
+
+        const swipeContent = this.currentOpenItem.querySelector('.swipe-content');
+        if (swipeContent) {
+            swipeContent.classList.add('swipe-transitioning');
+            swipeContent.style.transform = 'translateX(0)';
+        }
+        this.currentOpenItem = null;
+    }
+
+    // Handle click on action button
+    handleActionClick(item) {
+        const id = item.dataset.id;
+        if (this.onAction && id) {
+            this.triggerAction(item);
+        }
+    }
+
+    destroy() {
+        // Clean up if needed
+        this.container = null;
+        this.onAction = null;
+    }
+}
+
 class WineCellar {
     constructor() {
         this.wines = [];
@@ -1013,6 +1214,11 @@ class WineCellar {
             list.innerHTML = '';
             emptyState.classList.remove('hidden');
             this.updateSearchVisibility();
+            // Destroy swipe handler if exists
+            if (this.wineListSwipeHandler) {
+                this.wineListSwipeHandler.destroy();
+                this.wineListSwipeHandler = null;
+            }
             return;
         }
 
@@ -1034,27 +1240,84 @@ class WineCellar {
         }
 
         list.innerHTML = winesToShow.map(wine => `
-            <div class="wine-card" data-id="${wine.id}">
-                <div class="wine-card-image">
-                    ${wine.image
-                        ? `<img src="${wine.image}" alt="${wine.name}">`
-                        : `<div class="placeholder-image ${wine.type}">🍷</div>`
-                    }
+            <div class="swipe-container" data-id="${wine.id}">
+                <div class="swipe-action swipe-action--archive">
+                    <div class="swipe-action-content">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 8v13H3V8"/>
+                            <path d="M1 3h22v5H1z"/>
+                            <path d="M10 12h4"/>
+                        </svg>
+                        <span>Archiveer</span>
+                    </div>
                 </div>
-                <div class="wine-card-info">
-                    <h3 class="wine-card-name">${this.highlightMatch(wine.name)}</h3>
-                    ${wine.producer ? `<p class="wine-card-producer">${this.highlightMatch(wine.producer)}</p>` : ''}
-                    <p class="wine-card-meta">${this.highlightMatch([wine.grape, wine.year].filter(Boolean).join(' · ') || wine.region || 'No details')}</p>
-                    <div class="wine-card-footer">
-                        <span class="wine-type-tag ${wine.type}">${wine.type}</span>
-                        <span class="wine-quantity">${wine.quantity} fles${wine.quantity !== 1 ? 'sen' : ''}</span>
+                <div class="swipe-content">
+                    <div class="wine-card">
+                        <div class="wine-card-image">
+                            ${wine.image
+                                ? `<img src="${wine.image}" alt="${wine.name}">`
+                                : `<div class="placeholder-image ${wine.type}">🍷</div>`
+                            }
+                        </div>
+                        <div class="wine-card-info">
+                            <h3 class="wine-card-name">${this.highlightMatch(wine.name)}</h3>
+                            ${wine.producer ? `<p class="wine-card-producer">${this.highlightMatch(wine.producer)}</p>` : ''}
+                            <p class="wine-card-meta">${this.highlightMatch([wine.grape, wine.year].filter(Boolean).join(' · ') || wine.region || 'No details')}</p>
+                            <div class="wine-card-footer">
+                                <span class="wine-type-tag ${wine.type}">${wine.type}</span>
+                                <span class="wine-quantity">${wine.quantity} fles${wine.quantity !== 1 ? 'sen' : ''}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         `).join('');
 
-        list.querySelectorAll('.wine-card').forEach(card => {
-            card.addEventListener('click', () => this.openDetailModal(card.dataset.id));
+        // Bind click events for opening detail modal
+        list.querySelectorAll('.swipe-content').forEach(content => {
+            content.addEventListener('click', (e) => {
+                // Only open if not swiped
+                const transform = content.style.transform;
+                if (!transform || transform === 'translateX(0px)' || transform === 'translateX(0)') {
+                    const container = content.closest('.swipe-container');
+                    if (container) {
+                        this.openDetailModal(container.dataset.id);
+                    }
+                }
+            });
+        });
+
+        // Bind click events for action buttons
+        list.querySelectorAll('.swipe-action').forEach(action => {
+            action.addEventListener('click', () => {
+                const container = action.closest('.swipe-container');
+                if (container) {
+                    this.currentWineId = container.dataset.id;
+                    this.openDeleteModal();
+                }
+            });
+        });
+
+        // Initialize swipe handler
+        this.initWineListSwipeHandler();
+    }
+
+    initWineListSwipeHandler() {
+        const list = document.getElementById('wineList');
+        if (!list) return;
+
+        // Destroy existing handler
+        if (this.wineListSwipeHandler) {
+            this.wineListSwipeHandler.destroy();
+        }
+
+        // Create new handler
+        this.wineListSwipeHandler = new SwipeHandler({
+            container: list,
+            onAction: (id) => {
+                this.currentWineId = id;
+                this.openDeleteModal();
+            }
         });
     }
 
@@ -1415,6 +1678,11 @@ class WineCellar {
         if (this.archive.length === 0) {
             list.innerHTML = '';
             emptyState.classList.remove('hidden');
+            // Destroy swipe handler if exists
+            if (this.archiveListSwipeHandler) {
+                this.archiveListSwipeHandler.destroy();
+                this.archiveListSwipeHandler = null;
+            }
             return;
         }
 
@@ -1435,28 +1703,86 @@ class WineCellar {
             const rebuyLabel = rebuyLabels[wine.rebuy] || '';
 
             return `
-                <div class="archive-card" data-id="${wine.id}">
-                    <div class="archive-card-image">
-                        ${wine.image
-                            ? `<img src="${wine.image}" alt="${wine.name}">`
-                            : `<div class="placeholder-image ${wine.type}">🍷</div>`
-                        }
+                <div class="swipe-container" data-id="${wine.id}">
+                    <div class="swipe-action swipe-action--delete">
+                        <div class="swipe-action-content">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18"/>
+                                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
+                                <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                <line x1="10" y1="11" x2="10" y2="17"/>
+                                <line x1="14" y1="11" x2="14" y2="17"/>
+                            </svg>
+                            <span>Verwijder</span>
+                        </div>
                     </div>
-                    <div class="archive-card-info">
-                        <h4 class="archive-card-name">${this.escapeHtml(wine.name)}</h4>
-                        ${wine.producer ? `<p class="archive-card-producer">${this.escapeHtml(wine.producer)}</p>` : ''}
-                        <div class="archive-card-meta">
-                            ${wine.rating ? `<span class="archive-card-stars">${stars}</span>` : ''}
-                            ${wine.rebuy ? `<span class="archive-card-rebuy ${wine.rebuy}">${rebuyLabel}</span>` : ''}
+                    <div class="swipe-content">
+                        <div class="archive-card">
+                            <div class="archive-card-image">
+                                ${wine.image
+                                    ? `<img src="${wine.image}" alt="${wine.name}">`
+                                    : `<div class="placeholder-image ${wine.type}">🍷</div>`
+                                }
+                            </div>
+                            <div class="archive-card-info">
+                                <h4 class="archive-card-name">${this.escapeHtml(wine.name)}</h4>
+                                ${wine.producer ? `<p class="archive-card-producer">${this.escapeHtml(wine.producer)}</p>` : ''}
+                                <div class="archive-card-meta">
+                                    ${wine.rating ? `<span class="archive-card-stars">${stars}</span>` : ''}
+                                    ${wine.rebuy ? `<span class="archive-card-rebuy ${wine.rebuy}">${rebuyLabel}</span>` : ''}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
         }).join('');
 
-        // Bind click events
-        list.querySelectorAll('.archive-card').forEach(card => {
-            card.addEventListener('click', () => this.openArchiveDetail(card.dataset.id));
+        // Bind click events for opening detail modal
+        list.querySelectorAll('.swipe-content').forEach(content => {
+            content.addEventListener('click', (e) => {
+                // Only open if not swiped
+                const transform = content.style.transform;
+                if (!transform || transform === 'translateX(0px)' || transform === 'translateX(0)') {
+                    const container = content.closest('.swipe-container');
+                    if (container) {
+                        this.openArchiveDetail(container.dataset.id);
+                    }
+                }
+            });
+        });
+
+        // Bind click events for action buttons
+        list.querySelectorAll('.swipe-action').forEach(action => {
+            action.addEventListener('click', () => {
+                const container = action.closest('.swipe-container');
+                if (container) {
+                    this.currentArchiveId = container.dataset.id;
+                    this.deleteFromArchiveConfirm();
+                }
+            });
+        });
+
+        // Initialize swipe handler for archive
+        this.initArchiveSwipeHandler();
+    }
+
+    initArchiveSwipeHandler() {
+        const list = document.getElementById('archiveList');
+        if (!list) return;
+
+        // Destroy existing handler
+        if (this.archiveListSwipeHandler) {
+            this.archiveListSwipeHandler.destroy();
+        }
+
+        // Create new handler
+        this.archiveListSwipeHandler = new SwipeHandler({
+            container: list,
+            onAction: (id) => {
+                this.currentArchiveId = id;
+                this.deleteFromArchiveConfirm();
+            }
         });
     }
 
