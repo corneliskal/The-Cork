@@ -363,6 +363,97 @@ class WineCellar {
         }
     }
 
+    // Email/Password Authentication
+    isRegisterMode = false;
+
+    toggleAuthMode() {
+        this.isRegisterMode = !this.isRegisterMode;
+        const btn = document.getElementById('emailSignInBtn');
+        const toggleBtn = document.getElementById('toggleRegisterBtn');
+        const forgotBtn = document.getElementById('forgotPasswordBtn');
+
+        if (this.isRegisterMode) {
+            btn.textContent = 'Registreren';
+            toggleBtn.innerHTML = 'Al een account? <span>Inloggen</span>';
+            forgotBtn.style.display = 'none';
+        } else {
+            btn.textContent = 'Inloggen';
+            toggleBtn.innerHTML = 'Nog geen account? <span>Registreren</span>';
+            forgotBtn.style.display = 'block';
+        }
+    }
+
+    async handleEmailAuth(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        if (!email || !password) {
+            this.showToast('Vul e-mailadres en wachtwoord in');
+            return;
+        }
+
+        this.updateSyncStatus('connecting');
+
+        try {
+            if (this.isRegisterMode) {
+                // Register new user
+                const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                this.showToast('Account aangemaakt!');
+                console.log('User registered:', result.user.email);
+            } else {
+                // Sign in existing user
+                const result = await firebase.auth().signInWithEmailAndPassword(email, password);
+                this.showToast(`Ingelogd als ${result.user.email}`);
+                console.log('User signed in:', result.user.email);
+            }
+        } catch (error) {
+            console.error('Email auth error:', error);
+            this.updateSyncStatus('disconnected');
+
+            // User-friendly error messages in Dutch
+            const errorMessages = {
+                'auth/email-already-in-use': 'Dit e-mailadres is al in gebruik',
+                'auth/invalid-email': 'Ongeldig e-mailadres',
+                'auth/operation-not-allowed': 'Email/wachtwoord login is niet ingeschakeld',
+                'auth/weak-password': 'Wachtwoord moet minimaal 6 tekens zijn',
+                'auth/user-disabled': 'Dit account is uitgeschakeld',
+                'auth/user-not-found': 'Geen account gevonden met dit e-mailadres',
+                'auth/wrong-password': 'Onjuist wachtwoord',
+                'auth/invalid-credential': 'Ongeldige inloggegevens',
+                'auth/too-many-requests': 'Te veel pogingen. Probeer later opnieuw'
+            };
+
+            const message = errorMessages[error.code] || error.message;
+            this.showToast(message);
+        }
+    }
+
+    async handleForgotPassword() {
+        const email = document.getElementById('loginEmail').value.trim();
+
+        if (!email) {
+            this.showToast('Vul eerst je e-mailadres in');
+            return;
+        }
+
+        try {
+            await firebase.auth().sendPasswordResetEmail(email);
+            this.showToast('Wachtwoord reset e-mail verstuurd!');
+        } catch (error) {
+            console.error('Password reset error:', error);
+
+            const errorMessages = {
+                'auth/invalid-email': 'Ongeldig e-mailadres',
+                'auth/user-not-found': 'Geen account gevonden met dit e-mailadres'
+            };
+
+            const message = errorMessages[error.code] || error.message;
+            this.showToast(message);
+        }
+    }
+
     async signOut() {
         try {
             // Detach Firebase listeners before signing out
@@ -711,6 +802,11 @@ class WineCellar {
         document.getElementById('googleSignInBtn')?.addEventListener('click', () => this.signInWithGoogle());
         document.getElementById('loginGoogleBtn')?.addEventListener('click', () => this.signInWithGoogle());
         document.getElementById('signOutBtn')?.addEventListener('click', () => this.signOut());
+
+        // Email/Password Authentication
+        document.getElementById('emailAuthForm')?.addEventListener('submit', (e) => this.handleEmailAuth(e));
+        document.getElementById('toggleRegisterBtn')?.addEventListener('click', () => this.toggleAuthMode());
+        document.getElementById('forgotPasswordBtn')?.addEventListener('click', () => this.handleForgotPassword());
 
         // Archive button
         document.getElementById('archiveBtn')?.addEventListener('click', () => this.openArchiveList());

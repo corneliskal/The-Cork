@@ -44,7 +44,33 @@
             <div class="login-content">
                 <img src="logo.png" alt="The Cork" class="login-logo">
                 <h1>Welkom bij The Cork</h1>
-                <p>Log in met je Google account om je wijnkelder te beheren en te synchroniseren tussen al je apparaten.</p>
+                <p>Log in om je wijnkelder te beheren en te synchroniseren tussen al je apparaten.</p>
+
+                <!-- Email/Password Form -->
+                <form id="emailAuthForm" class="email-auth-form">
+                    <div class="form-group">
+                        <input type="email" id="loginEmail" class="auth-input" placeholder="E-mailadres" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="loginPassword" class="auth-input" placeholder="Wachtwoord" required minlength="6">
+                    </div>
+                    <button type="submit" id="emailSignInBtn" class="email-sign-in-btn">
+                        Inloggen
+                    </button>
+                </form>
+
+                <button type="button" id="toggleRegisterBtn" class="toggle-auth-btn">
+                    Nog geen account? <span>Registreren</span>
+                </button>
+
+                <button type="button" id="forgotPasswordBtn" class="forgot-password-btn">
+                    Wachtwoord vergeten?
+                </button>
+
+                <div class="auth-divider">
+                    <span>of</span>
+                </div>
+
                 <button id="loginGoogleBtn" class="google-sign-in-btn large">
                     <svg viewBox="0 0 24 24" width="20" height="20">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
