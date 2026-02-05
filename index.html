@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Cork - Wine Cellar</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="logo.png" alt="The Cork" class="logo-icon">
+                </div>
+                <button id="archiveBtn" class="header-icon-btn" aria-label="Archief">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M21 8v13H3V8"/>
+                        <path d="M1 3h22v5H1z"/>
+                        <path d="M10 12h4"/>
+                    </svg>
+                </button>
+                <button id="settingsBtn" class="header-icon-btn" aria-label="Settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+                <div class="header-stats">
+                    <span id="totalBottles">0</span> bottles
+                </div>
+                <div id="syncStatus" class="sync-status">
+                    <span class="status-local">💾 Lokaal</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Login Screen -->
+        <div id="loginScreen" class="login-screen">
+            <div class="login-content">
+                <img src="logo.png" alt="The Cork" class="login-logo">
+                <h1>Welkom bij The Cork</h1>
+                <p>Log in met je Google account om je wijnkelder te beheren en te synchroniseren tussen al je apparaten.</p>
+                <button id="loginGoogleBtn" class="google-sign-in-btn large">
+                    <svg viewBox="0 0 24 24" width="20" height="20">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Inloggen met Google
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content hidden">
+            <!-- Search Bar -->
+            <div id="searchContainer" class="search-container hidden">
+                <div class="search-input-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search wine, producer, grape...">
+                    <button id="clearSearch" class="clear-search-btn hidden">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="searchResults" class="search-results hidden">
+                    <span id="searchResultCount">0 results</span>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state">
+                <div class="empty-illustration">
+                    <img src="logo.png" alt="The Cork" class="empty-logo">
+                </div>
+                <h2>Your cellar is empty</h2>
+                <p>Tap + to add your first bottle</p>
+            </div>
+
+            <!-- Wine List -->
+            <div id="wineList" class="wine-list"></div>
+        </main>
+
+        <!-- Add Button -->
+        <button id="addWineBtn" class="fab" aria-label="Add wine">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        </button>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal">
+            <div class="modal-content settings-modal">
+                <div class="modal-header">
+                    <h2>Instellingen</h2>
+                    <button class="close-btn" data-close="settingsModal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-section" id="authSection">
+                        <h3>Account & Cloud Sync</h3>
+                        <p class="settings-description">
+                            Je wijnkelder wordt gesynchroniseerd met je Google account.<br>
+                            Al je wijnen zijn beschikbaar op al je apparaten.
+                        </p>
+
+                        <div class="api-key-status" id="userInfo" style="display: none; color: var(--system-green);">
+                        </div>
+
+                        <button id="googleSignInBtn" class="google-sign-in-btn">
+                            <svg viewBox="0 0 24 24" width="18" height="18">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                            Inloggen met Google
+                        </button>
+
+                        <button id="signOutBtn" class="clear-key-btn" style="display: none;">
+                            Uitloggen
+                        </button>
+
+                        <div class="api-key-status" id="firebaseSyncStatus" style="margin-top: 12px;">
+                            <span class="status-disconnected">Niet ingelogd</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>AI Wijnherkenning</h3>
+                        <div class="api-key-status" id="aiStatus">
+                            <span class="status-connected">✓ Automatische labelherkenning actief</span>
+                        </div>
+                        <p class="settings-description">
+                            Maak een foto van een wijnetiket en de app herkent automatisch de wijn,
+                            druivensoort, regio, en geeft proefnotities.
+                        </p>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Over The Cork</h3>
+                        <p class="settings-description">
+                            The Cork gebruikt GPT-4 Vision om wijnetiketten te lezen en automatisch
+                            wijnkenmerken, proefnotities en prijsinformatie op te halen.<br><br>
+                            Versie 2.0 - Nu met cloud sync en archief functie.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Wine Modal -->
+        <div id="addModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add Wine</h2>
+                    <button class="close-btn" data-close="addModal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- Image Upload Section -->
+                    <div class="upload-section">
+                        <div id="imagePreview" class="image-preview">
+                            <div class="upload-placeholder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <path d="M21 15l-5-5L5 21"/>
+                                </svg>
+                                <span>Tap to add photo</span>
+                            </div>
+                            <img id="previewImg" src="" alt="Wine label preview">
+                        </div>
+                        <div class="upload-buttons">
+                            <button id="cameraBtn" class="upload-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                    <circle cx="12" cy="13" r="4"/>
+                                </svg>
+                                Camera
+                            </button>
+                            <button id="galleryBtn" class="upload-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <path d="M21 15l-5-5L5 21"/>
+                                </svg>
+                                Gallery
+                            </button>
+                        </div>
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+                        <input type="file" id="galleryInput" accept="image/*" hidden>
+                    </div>
+
+                    <!-- Scanning Indicator -->
+                    <div id="scanningIndicator" class="scanning-indicator hidden">
+                        <div class="scanning-animation">
+                            <div class="scan-line"></div>
+                        </div>
+                        <p>Reading label...</p>
+                    </div>
+
+                    <!-- Wine Form -->
+                    <form id="wineForm" class="wine-form">
+                        <div class="form-group">
+                            <label for="wineName">Wine Name *</label>
+                            <input type="text" id="wineName" required placeholder="e.g., Grand Vin 2015">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="wineProducer">Producer / House</label>
+                            <input type="text" id="wineProducer" placeholder="e.g., Château Margaux">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="wineType">Type</label>
+                                <select id="wineType">
+                                    <option value="red">Red</option>
+                                    <option value="white">White</option>
+                                    <option value="rosé">Rosé</option>
+                                    <option value="sparkling">Sparkling</option>
+                                    <option value="dessert">Dessert</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="wineYear">Year</label>
+                                <input type="number" id="wineYear" min="1900" max="2030" placeholder="2020">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="wineRegion">Region</label>
+                            <input type="text" id="wineRegion" placeholder="e.g., Bordeaux, France">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="wineGrape">Grape Variety</label>
+                            <input type="text" id="wineGrape" placeholder="e.g., Cabernet Sauvignon">
+                        </div>
+
+                        <div class="characteristics-section">
+                            <h3>Characteristics</h3>
+
+                            <div class="characteristic-slider">
+                                <label>
+                                    <span>Boldness</span>
+                                    <span class="char-value" id="boldnessValue">3</span>
+                                </label>
+                                <input type="range" id="boldness" min="1" max="5" value="3">
+                                <div class="slider-labels">
+                                    <span>Light</span>
+                                    <span>Bold</span>
+                                </div>
+                            </div>
+
+                            <div class="characteristic-slider">
+                                <label>
+                                    <span>Tannins</span>
+                                    <span class="char-value" id="tanninsValue">3</span>
+                                </label>
+                                <input type="range" id="tannins" min="1" max="5" value="3">
+                                <div class="slider-labels">
+                                    <span>Smooth</span>
+                                    <span>Tannic</span>
+                                </div>
+                            </div>
+
+                            <div class="characteristic-slider">
+                                <label>
+                                    <span>Acidity</span>
+                                    <span class="char-value" id="acidityValue">3</span>
+                                </label>
+                                <input type="range" id="acidity" min="1" max="5" value="3">
+                                <div class="slider-labels">
+                                    <span>Soft</span>
+                                    <span>Acidic</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="winePrice">Prijs (€)</label>
+                                <input type="number" id="winePrice" min="0" step="0.01" placeholder="25.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="wineQuantity">Aantal</label>
+                                <div class="quantity-control">
+                                    <button type="button" class="qty-btn" data-action="decrease">−</button>
+                                    <input type="number" id="wineQuantity" min="1" value="1">
+                                    <button type="button" class="qty-btn" data-action="increase">+</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="wineStore">Winkel</label>
+                            <input type="text" id="wineStore" placeholder="bijv. Albert Heijn, Gall & Gall">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="wineNotes">Tasting Notes</label>
+                            <textarea id="wineNotes" rows="3" placeholder="Your personal notes..."></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-btn">Add to Cellar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wine Detail Modal -->
+        <div id="detailModal" class="modal">
+            <div class="modal-content detail-modal">
+                <button class="close-btn detail-close" data-close="detailModal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+
+                <div class="detail-header">
+                    <div id="detailImage" class="detail-image">
+                        <div class="wine-type-badge" id="detailTypeBadge">Red</div>
+                    </div>
+                </div>
+
+                <div class="detail-body">
+                    <div class="detail-title-section">
+                        <h2 id="detailName">Wine Name</h2>
+                        <p id="detailProducer" class="detail-producer">Producer</p>
+                        <p id="detailRegion" class="detail-region">Region, Country</p>
+                    </div>
+
+                    <div class="detail-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Jaar</span>
+                            <span id="detailYear" class="meta-value">2020</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Druif</span>
+                            <span id="detailGrape" class="meta-value">Cabernet</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Prijs</span>
+                            <span id="detailPrice" class="meta-value">€25</span>
+                        </div>
+                    </div>
+
+                    <div id="detailStoreSection" class="detail-store">
+                        <span class="store-icon">🛒</span>
+                        <span id="detailStore">Winkel</span>
+                    </div>
+
+                    <div class="detail-characteristics">
+                        <h3>Profile</h3>
+                        <div class="char-bars">
+                            <div class="char-bar-item">
+                                <span class="char-label">Boldness</span>
+                                <div class="char-bar">
+                                    <div id="detailBoldness" class="char-fill" style="width: 60%"></div>
+                                </div>
+                            </div>
+                            <div class="char-bar-item">
+                                <span class="char-label">Tannins</span>
+                                <div class="char-bar">
+                                    <div id="detailTannins" class="char-fill" style="width: 60%"></div>
+                                </div>
+                            </div>
+                            <div class="char-bar-item">
+                                <span class="char-label">Acidity</span>
+                                <div class="char-bar">
+                                    <div id="detailAcidity" class="char-fill" style="width: 60%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="detailNotesSection" class="detail-notes">
+                        <h3>Notes</h3>
+                        <p id="detailNotes"></p>
+                    </div>
+
+                    <div class="detail-quantity-section">
+                        <h3>In Cellar</h3>
+                        <div class="detail-quantity-control">
+                            <button class="qty-btn large" id="detailDecrease">−</button>
+                            <span id="detailQuantity" class="detail-qty-value">1</span>
+                            <button class="qty-btn large" id="detailIncrease">+</button>
+                        </div>
+                        <span class="bottles-label">bottles</span>
+                    </div>
+
+                    <div class="detail-actions">
+                        <button id="editWineBtn" class="action-btn edit-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            Edit
+                        </button>
+                        <button id="deleteWineBtn" class="action-btn delete-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Archive Wine Modal (replaces simple delete) -->
+        <div id="archiveModal" class="modal">
+            <div class="modal-content archive-modal">
+                <div class="modal-header">
+                    <h2>Wijn Archiveren</h2>
+                    <button class="close-btn" data-close="archiveModal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="archive-wine-name" id="archiveWineName">Wine Name</p>
+
+                    <div class="archive-section">
+                        <label>Hoe vond je deze wijn?</label>
+                        <div class="star-rating" id="archiveRating">
+                            <div class="star-wrapper" data-star="1">
+                                <span class="star-half left" data-rating="0.5">★</span>
+                                <span class="star-half right" data-rating="1">★</span>
+                            </div>
+                            <div class="star-wrapper" data-star="2">
+                                <span class="star-half left" data-rating="1.5">★</span>
+                                <span class="star-half right" data-rating="2">★</span>
+                            </div>
+                            <div class="star-wrapper" data-star="3">
+                                <span class="star-half left" data-rating="2.5">★</span>
+                                <span class="star-half right" data-rating="3">★</span>
+                            </div>
+                            <div class="star-wrapper" data-star="4">
+                                <span class="star-half left" data-rating="3.5">★</span>
+                                <span class="star-half right" data-rating="4">★</span>
+                            </div>
+                            <div class="star-wrapper" data-star="5">
+                                <span class="star-half left" data-rating="4.5">★</span>
+                                <span class="star-half right" data-rating="5">★</span>
+                            </div>
+                        </div>
+                        <span class="rating-label" id="ratingLabel">Selecteer een beoordeling</span>
+                    </div>
+
+                    <div class="archive-section">
+                        <label>Zou je deze wijn opnieuw kopen?</label>
+                        <div class="rebuy-options" id="rebuyOptions">
+                            <button type="button" class="rebuy-btn" data-rebuy="yes">
+                                <span class="rebuy-icon">👍</span>
+                                <span>Ja!</span>
+                            </button>
+                            <button type="button" class="rebuy-btn" data-rebuy="maybe">
+                                <span class="rebuy-icon">🤔</span>
+                                <span>Misschien</span>
+                            </button>
+                            <button type="button" class="rebuy-btn" data-rebuy="no">
+                                <span class="rebuy-icon">👎</span>
+                                <span>Nee</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="archive-section">
+                        <label for="archiveNotes">Notities (optioneel)</label>
+                        <textarea id="archiveNotes" rows="2" placeholder="Je ervaring met deze wijn..."></textarea>
+                    </div>
+
+                    <div class="archive-actions">
+                        <button type="button" class="skip-archive-btn" id="skipArchive">Alleen verwijderen</button>
+                        <button type="button" class="confirm-archive-btn" id="confirmArchive">Archiveren</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Archive List Modal -->
+        <div id="archiveListModal" class="modal">
+            <div class="modal-content archive-list-modal">
+                <div class="modal-header">
+                    <h2>Archief</h2>
+                    <button class="close-btn" data-close="archiveListModal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Archive Search -->
+                    <div class="archive-search-container">
+                        <div class="search-input-wrapper">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="archiveSearchInput" class="search-input" placeholder="Zoek in archief...">
+                            <button id="clearArchiveSearch" class="clear-search-btn hidden">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Archive Filters -->
+                    <div class="archive-filters">
+                        <select id="archiveTypeFilter" class="archive-filter-select">
+                            <option value="">Alle types</option>
+                            <option value="red">Rood</option>
+                            <option value="white">Wit</option>
+                            <option value="rosé">Rosé</option>
+                            <option value="sparkling">Sparkling</option>
+                            <option value="dessert">Dessert</option>
+                        </select>
+                        <select id="archiveRebuyFilter" class="archive-filter-select">
+                            <option value="">Alle beoordelingen</option>
+                            <option value="yes">Opnieuw kopen</option>
+                            <option value="maybe">Misschien</option>
+                            <option value="no">Niet opnieuw</option>
+                        </select>
+                    </div>
+
+                    <!-- Archive Stats -->
+                    <div class="archive-stats" id="archiveStats">
+                        <span id="archiveCount">0 wijnen</span>
+                    </div>
+
+                    <!-- Archive Empty State -->
+                    <div id="archiveEmptyState" class="archive-empty-state">
+                        <span class="archive-empty-icon">📚</span>
+                        <p>Je archief is leeg</p>
+                        <span class="archive-empty-hint">Verwijderde wijnen met een beoordeling verschijnen hier</span>
+                    </div>
+
+                    <!-- Archive List -->
+                    <div id="archiveList" class="archive-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Archive Detail Modal -->
+        <div id="archiveDetailModal" class="modal">
+            <div class="modal-content detail-modal">
+                <button class="close-btn detail-close" data-close="archiveDetailModal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+
+                <div class="detail-header">
+                    <div id="archiveDetailImage" class="detail-image">
+                        <div class="wine-type-badge">Red</div>
+                    </div>
+                </div>
+
+                <div class="detail-body">
+                    <div class="detail-title-section">
+                        <h2 id="archiveDetailName">Wine Name</h2>
+                        <p id="archiveDetailProducer" class="detail-producer">Producer</p>
+                        <p id="archiveDetailRegion" class="detail-region">Region, Country</p>
+                    </div>
+
+                    <!-- Rating display -->
+                    <div class="archive-rating-display">
+                        <div class="rating-stars" id="archiveDetailStars">★★★★★</div>
+                        <div class="rebuy-badge" id="archiveDetailRebuy">
+                            <span class="rebuy-icon">👍</span>
+                            <span>Opnieuw kopen</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Jaar</span>
+                            <span id="archiveDetailYear" class="meta-value">2020</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Druif</span>
+                            <span id="archiveDetailGrape" class="meta-value">Cabernet</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Prijs</span>
+                            <span id="archiveDetailPrice" class="meta-value">€25</span>
+                        </div>
+                    </div>
+
+                    <div id="archiveDetailStoreSection" class="detail-store">
+                        <span class="store-icon">🛒</span>
+                        <span id="archiveDetailStore">Winkel</span>
+                    </div>
+
+                    <div class="detail-characteristics">
+                        <h3>Profile</h3>
+                        <div class="char-bars">
+                            <div class="char-bar-item">
+                                <span class="char-label">Boldness</span>
+                                <div class="char-bar">
+                                    <div id="archiveDetailBoldness" class="char-fill" style="width: 60%"></div>
+                                </div>
+                            </div>
+                            <div class="char-bar-item">
+                                <span class="char-label">Tannins</span>
+                                <div class="char-bar">
+                                    <div id="archiveDetailTannins" class="char-fill" style="width: 60%"></div>
+                                </div>
+                            </div>
+                            <div class="char-bar-item">
+                                <span class="char-label">Acidity</span>
+                                <div class="char-bar">
+                                    <div id="archiveDetailAcidity" class="char-fill" style="width: 60%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="archiveDetailNotesSection" class="detail-notes">
+                        <h3>Tasting Notes</h3>
+                        <p id="archiveDetailNotes"></p>
+                    </div>
+
+                    <div id="archiveDetailReviewSection" class="detail-notes archive-review">
+                        <h3>Mijn Review</h3>
+                        <p id="archiveDetailReview"></p>
+                        <span class="archive-date" id="archiveDetailDate"></span>
+                    </div>
+
+                    <div class="detail-actions">
+                        <button id="restoreWineBtn" class="action-btn restore-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                            </svg>
+                            Terugzetten
+                        </button>
+                        <button id="deleteArchiveBtn" class="action-btn delete-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                            Verwijderen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast">
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
