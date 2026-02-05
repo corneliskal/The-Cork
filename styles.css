@@ -1652,54 +1652,31 @@ body {
     text-align: center;
 }
 
-/* Star Rating - Half Star Support */
+/* Star Rating - 5 Stars */
 .star-rating {
     display: flex;
     justify-content: center;
-    gap: var(--space-4);
+    gap: var(--space-8);
     margin-bottom: var(--space-8);
 }
 
-.star-wrapper {
-    position: relative;
-    width: 44px;
-    height: 44px;
-    font-size: 2rem;
-    cursor: pointer;
-}
-
-.star-half {
-    position: absolute;
-    top: 0;
-    width: 50%;
-    height: 100%;
-    overflow: hidden;
+.star-rating .star {
+    font-size: 2.5rem;
     color: var(--separator-opaque);
-    transition: color 0.15s;
-    display: flex;
-    align-items: center;
+    cursor: pointer;
+    transition: color 0.15s, transform 0.15s;
+    line-height: 1;
 }
 
-.star-half.left {
-    left: 0;
-    justify-content: flex-start;
+.star-rating .star:active {
+    transform: scale(1.2);
 }
 
-.star-half.right {
-    right: 0;
-    justify-content: flex-end;
-    direction: rtl;
-}
-
-.star-wrapper:active {
-    transform: scale(1.1);
-}
-
-.star-half.active {
+.star-rating .star.active {
     color: #FFD700;
 }
 
-.star-half.hover {
+.star-rating .star.hover {
     color: #FFD700;
     opacity: 0.7;
 }
@@ -2339,4 +2316,197 @@ body {
 .swipe-container .archive-card:active {
     margin: 0;
     padding: var(--space-12) var(--space-16);
+}
+
+/* ============================
+   Sort Bar
+   ============================ */
+
+.sort-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    margin-bottom: var(--space-12);
+    padding: 0 var(--space-4);
+}
+
+.sort-bar.hidden {
+    display: none;
+}
+
+.sort-bar label {
+    font-size: var(--font-footnote);
+    color: var(--label-secondary);
+}
+
+.sort-select {
+    height: 32px;
+    padding: 0 var(--space-24) 0 var(--space-12);
+    border: 1px solid var(--separator-opaque);
+    border-radius: var(--radius-md);
+    font-size: var(--font-footnote);
+    font-family: var(--font-system);
+    color: var(--label-primary);
+    background: var(--bg-secondary);
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%233C3C43' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+
+.sort-select:focus {
+    outline: none;
+    border-color: var(--wine-primary);
+}
+
+/* ============================
+   Drink Window Form
+   ============================ */
+
+.drink-window-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+.drink-window-row input {
+    flex: 1;
+    height: 44px;
+    padding: 0 var(--space-12);
+    border: 1px solid var(--separator-opaque);
+    border-radius: var(--radius-md);
+    font-size: var(--font-body);
+    font-family: var(--font-system);
+    color: var(--label-primary);
+    background: var(--bg-secondary);
+    -webkit-appearance: none;
+    text-align: center;
+}
+
+.drink-window-row input:focus {
+    outline: none;
+    border-color: var(--wine-primary);
+}
+
+.drink-window-separator {
+    color: var(--label-tertiary);
+    font-size: var(--font-body);
+}
+
+/* ============================
+   Drink Window Display (Wine Card)
+   ============================ */
+
+.wine-card-footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+    margin-top: var(--space-4);
+}
+
+.wine-price-tag {
+    font-size: var(--font-caption2);
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0, 122, 255, 0.12);
+    color: var(--system-blue);
+}
+
+.wine-drink-status {
+    font-size: var(--font-caption2);
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.wine-drink-status.status-perfect {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--system-green);
+}
+
+.wine-drink-status.status-soon {
+    background: rgba(255, 149, 0, 0.15);
+    color: var(--system-orange);
+}
+
+.wine-drink-status.status-early {
+    background: rgba(0, 122, 255, 0.12);
+    color: var(--system-blue);
+}
+
+.wine-drink-status.status-past {
+    background: rgba(255, 59, 48, 0.1);
+    color: var(--system-red);
+}
+
+/* ============================
+   Drink Window Display (Detail Modal)
+   ============================ */
+
+.detail-drink-window {
+    padding: var(--space-16);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-20);
+}
+
+.drink-window-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    margin-bottom: var(--space-8);
+}
+
+.drink-window-icon {
+    font-size: 1rem;
+}
+
+.drink-window-label {
+    font-size: var(--font-footnote);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--label-secondary);
+}
+
+.drink-window-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-12);
+}
+
+.drink-window-years {
+    font-size: var(--font-title3);
+    font-weight: 600;
+    color: var(--label-primary);
+}
+
+.drink-status-badge {
+    font-size: var(--font-caption1);
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 100px;
+}
+
+.drink-status-badge.status-perfect {
+    background: rgba(52, 199, 89, 0.15);
+    color: var(--system-green);
+}
+
+.drink-status-badge.status-soon {
+    background: rgba(255, 149, 0, 0.15);
+    color: var(--system-orange);
+}
+
+.drink-status-badge.status-early {
+    background: rgba(0, 122, 255, 0.12);
+    color: var(--system-blue);
+}
+
+.drink-status-badge.status-past {
+    background: rgba(255, 59, 48, 0.1);
+    color: var(--system-red);
 }

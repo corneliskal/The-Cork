@@ -222,6 +222,9 @@ class WineCellar {
         this.archiveRating = 0;
         this.archiveRebuy = null;
 
+        // Sort state
+        this.sortBy = 'recent'; // 'recent' or 'drinkability'
+
         // Firebase
         this.db = null;
         this.userId = null;
@@ -728,6 +731,12 @@ class WineCellar {
             searchInput.focus();
         });
 
+        // Sort functionality
+        document.getElementById('sortSelect')?.addEventListener('change', (e) => {
+            this.sortBy = e.target.value;
+            this.sortAndRenderWines();
+        });
+
         // FAB button
         document.getElementById('addWineBtn')?.addEventListener('click', () => this.openAddModal());
 
@@ -811,11 +820,11 @@ class WineCellar {
         // Archive button
         document.getElementById('archiveBtn')?.addEventListener('click', () => this.openArchiveList());
 
-        // Archive modal - Star rating (half-star support)
-        document.querySelectorAll('#archiveRating .star-half').forEach(starHalf => {
-            starHalf.addEventListener('click', () => this.setArchiveRating(parseFloat(starHalf.dataset.rating)));
-            starHalf.addEventListener('mouseenter', () => this.previewRating(parseFloat(starHalf.dataset.rating)));
-            starHalf.addEventListener('mouseleave', () => this.previewRating(0));
+        // Archive modal - Star rating (5 stars)
+        document.querySelectorAll('#archiveRating .star').forEach(star => {
+            star.addEventListener('click', () => this.setArchiveRating(parseInt(star.dataset.rating)));
+            star.addEventListener('mouseenter', () => this.previewRating(parseInt(star.dataset.rating)));
+            star.addEventListener('mouseleave', () => this.previewRating(0));
         });
 
         // Archive modal - Rebuy options
@@ -910,6 +919,8 @@ class WineCellar {
         });
 
         document.getElementById('wineQuantity').value = 1;
+        document.getElementById('drinkFrom').value = '';
+        document.getElementById('drinkUntil').value = '';
         document.getElementById('scanningIndicator').classList.add('hidden');
     }
 
@@ -1179,12 +1190,13 @@ class WineCellar {
     }
 
     generateDemoWineData() {
+        const currentYear = new Date().getFullYear();
         const wines = [
-            { name: 'Grand Vin', producer: 'Château Margaux', type: 'red', year: 2015, region: 'Margaux, Bordeaux, France', grape: 'Cabernet Sauvignon, Merlot', boldness: 4, tannins: 4, acidity: 3, price: 450, description: 'Elegant with blackcurrant, violet, and cedar notes.' },
-            { name: 'Sauvignon Blanc', producer: 'Cloudy Bay', type: 'white', year: 2022, region: 'Marlborough, New Zealand', grape: 'Sauvignon Blanc', boldness: 2, tannins: 1, acidity: 4, price: 28, description: 'Crisp with citrus and passion fruit.' },
-            { name: 'Whispering Angel', producer: 'Château d\'Esclans', type: 'rosé', year: 2023, region: 'Provence, France', grape: 'Grenache, Cinsault', boldness: 2, tannins: 1, acidity: 3, price: 22, description: 'Delicate strawberry and peach flavors.' },
-            { name: 'Tignanello', producer: 'Antinori', type: 'red', year: 2019, region: 'Tuscany, Italy', grape: 'Sangiovese, Cabernet Sauvignon', boldness: 5, tannins: 4, acidity: 4, price: 120, description: 'Rich with cherry, plum, and spicy oak.' },
-            { name: 'Brut Vintage', producer: 'Dom Pérignon', type: 'sparkling', year: 2012, region: 'Champagne, France', grape: 'Chardonnay, Pinot Noir', boldness: 3, tannins: 1, acidity: 4, price: 200, description: 'Fine bubbles with brioche and citrus.' }
+            { name: 'Grand Vin', producer: 'Château Margaux', type: 'red', year: 2015, region: 'Margaux, Bordeaux, France', grape: 'Cabernet Sauvignon, Merlot', boldness: 4, tannins: 4, acidity: 3, price: 450, description: 'Elegant with blackcurrant, violet, and cedar notes.', drinkFrom: 2025, drinkUntil: 2050 },
+            { name: 'Sauvignon Blanc', producer: 'Cloudy Bay', type: 'white', year: 2022, region: 'Marlborough, New Zealand', grape: 'Sauvignon Blanc', boldness: 2, tannins: 1, acidity: 4, price: 28, description: 'Crisp with citrus and passion fruit.', drinkFrom: 2022, drinkUntil: 2025 },
+            { name: 'Whispering Angel', producer: 'Château d\'Esclans', type: 'rosé', year: 2023, region: 'Provence, France', grape: 'Grenache, Cinsault', boldness: 2, tannins: 1, acidity: 3, price: 22, description: 'Delicate strawberry and peach flavors.', drinkFrom: 2023, drinkUntil: 2026 },
+            { name: 'Tignanello', producer: 'Antinori', type: 'red', year: 2019, region: 'Tuscany, Italy', grape: 'Sangiovese, Cabernet Sauvignon', boldness: 5, tannins: 4, acidity: 4, price: 120, description: 'Rich with cherry, plum, and spicy oak.', drinkFrom: 2024, drinkUntil: 2040 },
+            { name: 'Brut Vintage', producer: 'Dom Pérignon', type: 'sparkling', year: 2012, region: 'Champagne, France', grape: 'Chardonnay, Pinot Noir', boldness: 3, tannins: 1, acidity: 4, price: 200, description: 'Fine bubbles with brioche and citrus.', drinkFrom: 2020, drinkUntil: 2035 }
         ];
         return wines[Math.floor(Math.random() * wines.length)];
     }
@@ -1196,14 +1208,30 @@ class WineCellar {
         document.getElementById('wineYear').value = data.year || '';
         document.getElementById('wineRegion').value = data.region || '';
         document.getElementById('wineGrape').value = data.grape || '';
-        document.getElementById('winePrice').value = data.price || '';
 
-        if (data.description) {
-            document.getElementById('wineNotes').value = data.description;
+        // Handle price - can be number or string like "€25-30"
+        let priceValue = data.price || data.estimatedPrice || '';
+        if (typeof priceValue === 'string') {
+            // Extract first number from string like "€25-30" or "25 euros"
+            const priceMatch = priceValue.match(/(\d+)/);
+            priceValue = priceMatch ? priceMatch[1] : '';
+        }
+        document.getElementById('winePrice').value = priceValue;
+
+        document.getElementById('drinkFrom').value = data.drinkFrom || '';
+        document.getElementById('drinkUntil').value = data.drinkUntil || '';
+
+        // Handle tasting notes - AI returns as "notes", demo data as "description"
+        const notesValue = data.notes || data.description || '';
+        if (notesValue) {
+            document.getElementById('wineNotes').value = notesValue;
         }
 
+        // Support both flat and nested characteristics from AI
+        const chars = data.characteristics || {};
         ['boldness', 'tannins', 'acidity'].forEach(id => {
-            const value = data[id] || 3;
+            // Check nested first (AI response), then flat (demo data)
+            const value = chars[id] || data[id] || 3;
             document.getElementById(id).value = value;
             document.getElementById(`${id}Value`).textContent = value;
         });
@@ -1230,6 +1258,8 @@ class WineCellar {
             price: parseFloat(document.getElementById('winePrice').value) || null,
             quantity: parseInt(document.getElementById('wineQuantity').value) || 1,
             store: document.getElementById('wineStore').value || null,
+            drinkFrom: parseInt(document.getElementById('drinkFrom').value) || null,
+            drinkUntil: parseInt(document.getElementById('drinkUntil').value) || null,
             notes: document.getElementById('wineNotes').value || null,
             image: this.currentImage,
             addedAt: this.editMode ? this.wines.find(w => w.id === this.currentWineId)?.addedAt : new Date().toISOString()
@@ -1256,11 +1286,68 @@ class WineCellar {
 
     updateSearchVisibility() {
         const searchContainer = document.getElementById('searchContainer');
+        const sortBar = document.getElementById('sortBar');
         if (this.wines.length > 0) {
             searchContainer?.classList.remove('hidden');
+            sortBar?.classList.remove('hidden');
         } else {
             searchContainer?.classList.add('hidden');
+            sortBar?.classList.add('hidden');
         }
+    }
+
+    sortAndRenderWines() {
+        // Sort wines based on current sort option
+        if (this.sortBy === 'drinkability') {
+            // Sort by drinkability: wines that are ready now first, then by urgency
+            this.wines.sort((a, b) => {
+                const statusA = this.getDrinkStatus(a);
+                const statusB = this.getDrinkStatus(b);
+
+                // Priority order: perfect > soon > early > past > unknown
+                const priority = { perfect: 0, soon: 1, early: 2, past: 3, unknown: 4 };
+                const prioA = priority[statusA.status];
+                const prioB = priority[statusB.status];
+
+                if (prioA !== prioB) {
+                    return prioA - prioB;
+                }
+
+                // Within same status, sort by drinkUntil (earliest first for perfect/soon)
+                if (statusA.status === 'perfect' || statusA.status === 'soon') {
+                    return (a.drinkUntil || 9999) - (b.drinkUntil || 9999);
+                }
+
+                // For early wines, sort by drinkFrom (soonest first)
+                if (statusA.status === 'early') {
+                    return (a.drinkFrom || 9999) - (b.drinkFrom || 9999);
+                }
+
+                // Default: by addedAt
+                return new Date(b.addedAt) - new Date(a.addedAt);
+            });
+        } else if (this.sortBy === 'price_asc') {
+            // Sort by price ascending (cheapest first, wines without price at the end)
+            this.wines.sort((a, b) => {
+                if (!a.price && !b.price) return new Date(b.addedAt) - new Date(a.addedAt);
+                if (!a.price) return 1;
+                if (!b.price) return -1;
+                return a.price - b.price;
+            });
+        } else if (this.sortBy === 'price_desc') {
+            // Sort by price descending (most expensive first, wines without price at the end)
+            this.wines.sort((a, b) => {
+                if (!a.price && !b.price) return new Date(b.addedAt) - new Date(a.addedAt);
+                if (!a.price) return 1;
+                if (!b.price) return -1;
+                return b.price - a.price;
+            });
+        } else {
+            // Sort by addedAt (newest first)
+            this.wines.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+        }
+
+        this.renderWineList();
     }
 
     handleSearch() {
@@ -1335,7 +1422,10 @@ class WineCellar {
             return;
         }
 
-        list.innerHTML = winesToShow.map(wine => `
+        list.innerHTML = winesToShow.map(wine => {
+            const drinkStatus = this.getDrinkStatus(wine);
+
+            return `
             <div class="swipe-container" data-id="${wine.id}">
                 <div class="swipe-action swipe-action--archive">
                     <div class="swipe-action-content">
@@ -1361,13 +1451,15 @@ class WineCellar {
                             <p class="wine-card-meta">${this.highlightMatch([wine.grape, wine.year].filter(Boolean).join(' · ') || wine.region || 'No details')}</p>
                             <div class="wine-card-footer">
                                 <span class="wine-type-tag ${wine.type}">${wine.type}</span>
-                                <span class="wine-quantity">${wine.quantity} fles${wine.quantity !== 1 ? 'sen' : ''}</span>
+                                ${wine.price ? `<span class="wine-price-tag">€${wine.price}</span>` : ''}
+                                ${drinkStatus.label ? `<span class="wine-drink-status ${drinkStatus.class}">${drinkStatus.label}</span>` : ''}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
 
         // Bind click events for opening detail modal
         list.querySelectorAll('.swipe-content').forEach(content => {
@@ -1470,6 +1562,26 @@ class WineCellar {
         document.getElementById('detailTannins').style.width = `${wine.tannins * 20}%`;
         document.getElementById('detailAcidity').style.width = `${wine.acidity * 20}%`;
 
+        // Drink window
+        const drinkWindowSection = document.getElementById('detailDrinkWindowSection');
+        const drinkWindowDisplay = this.getDrinkWindowDisplay(wine);
+        if (drinkWindowDisplay) {
+            drinkWindowSection.style.display = 'block';
+            document.getElementById('detailDrinkWindow').textContent = drinkWindowDisplay;
+
+            const drinkStatus = this.getDrinkStatus(wine);
+            const statusBadge = document.getElementById('detailDrinkStatus');
+            if (drinkStatus.label) {
+                statusBadge.textContent = drinkStatus.label;
+                statusBadge.className = `drink-status-badge ${drinkStatus.class}`;
+                statusBadge.style.display = 'inline-block';
+            } else {
+                statusBadge.style.display = 'none';
+            }
+        } else {
+            drinkWindowSection.style.display = 'none';
+        }
+
         const storeSection = document.getElementById('detailStoreSection');
         const storeText = document.getElementById('detailStore');
         if (wine.store) {
@@ -1531,6 +1643,8 @@ class WineCellar {
             document.getElementById('winePrice').value = wine.price || '';
             document.getElementById('wineQuantity').value = wine.quantity;
             document.getElementById('wineStore').value = wine.store || '';
+            document.getElementById('drinkFrom').value = wine.drinkFrom || '';
+            document.getElementById('drinkUntil').value = wine.drinkUntil || '';
             document.getElementById('wineNotes').value = wine.notes || '';
 
             ['boldness', 'tannins', 'acidity'].forEach(id => {
@@ -1565,8 +1679,8 @@ class WineCellar {
             ? `${wine.name} - ${wine.producer}`
             : wine.name;
 
-        // Reset stars (half-star support)
-        document.querySelectorAll('#archiveRating .star-half').forEach(star => {
+        // Reset stars
+        document.querySelectorAll('#archiveRating .star').forEach(star => {
             star.classList.remove('active', 'hover');
         });
         document.getElementById('ratingLabel').textContent = 'Selecteer een beoordeling';
@@ -1584,14 +1698,14 @@ class WineCellar {
 
     setArchiveRating(rating) {
         this.archiveRating = rating;
-        // Labels for half-star ratings
+        // Labels for 5-star ratings
         const labels = {
             0: 'Selecteer een beoordeling',
-            0.5: 'Zeer slecht', 1: 'Slecht',
-            1.5: 'Ondermaats', 2: 'Matig',
-            2.5: 'Redelijk', 3: 'Goed',
-            3.5: 'Erg goed', 4: 'Heel goed',
-            4.5: 'Excellent', 5: 'Uitstekend!'
+            1: 'Slecht',
+            2: 'Matig',
+            3: 'Goed',
+            4: 'Heel goed',
+            5: 'Uitstekend!'
         };
         document.getElementById('ratingLabel').textContent = labels[rating] || '';
         this.updateStarDisplay(rating, 'active');
@@ -1608,24 +1722,23 @@ class WineCellar {
     }
 
     updateStarDisplay(rating, className) {
-        document.querySelectorAll('#archiveRating .star-half').forEach(starHalf => {
-            const starRating = parseFloat(starHalf.dataset.rating);
-            starHalf.classList.toggle(className, starRating <= rating);
+        document.querySelectorAll('#archiveRating .star').forEach(star => {
+            const starRating = parseInt(star.dataset.rating);
+            star.classList.toggle(className, starRating <= rating);
         });
     }
 
     clearStarClass(className) {
-        document.querySelectorAll('#archiveRating .star-half').forEach(starHalf => {
-            starHalf.classList.remove(className);
+        document.querySelectorAll('#archiveRating .star').forEach(star => {
+            star.classList.remove(className);
         });
     }
 
-    // Helper to generate star display string (supports half-stars)
+    // Helper to generate star display string
     getStarDisplay(rating) {
-        const fullStars = Math.floor(rating);
-        const hasHalf = rating % 1 !== 0;
-        const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-        return '★'.repeat(fullStars) + (hasHalf ? '⯨' : '') + '☆'.repeat(emptyStars);
+        const fullStars = Math.round(rating);
+        const emptyStars = 5 - fullStars;
+        return '★'.repeat(fullStars) + '☆'.repeat(emptyStars);
     }
 
     setRebuyOption(option) {
@@ -2040,6 +2153,48 @@ class WineCellar {
 
         this.closeModal('archiveDetailModal');
         this.showToast('Wijn verwijderd uit archief');
+    }
+
+    // ============================
+    // Drink Window Helpers
+    // ============================
+
+    getDrinkStatus(wine) {
+        if (!wine.drinkFrom && !wine.drinkUntil) {
+            return { status: 'unknown', label: null, class: '' };
+        }
+
+        const currentYear = new Date().getFullYear();
+        const drinkFrom = wine.drinkFrom || currentYear;
+        const drinkUntil = wine.drinkUntil || currentYear + 50;
+
+        if (currentYear < drinkFrom) {
+            const yearsToWait = drinkFrom - currentYear;
+            return {
+                status: 'early',
+                label: yearsToWait === 1 ? 'Nog 1 jaar' : `Nog ${yearsToWait} jaar`,
+                class: 'status-early'
+            };
+        } else if (currentYear > drinkUntil) {
+            return { status: 'past', label: 'Voorbij optimum', class: 'status-past' };
+        } else if (currentYear >= drinkUntil - 1) {
+            return { status: 'soon', label: 'Binnenkort drinken', class: 'status-soon' };
+        } else {
+            return { status: 'perfect', label: 'Nu perfect', class: 'status-perfect' };
+        }
+    }
+
+    getDrinkWindowDisplay(wine) {
+        if (!wine.drinkFrom && !wine.drinkUntil) {
+            return null;
+        }
+        if (wine.drinkFrom && wine.drinkUntil) {
+            return `${wine.drinkFrom} — ${wine.drinkUntil}`;
+        }
+        if (wine.drinkFrom) {
+            return `Vanaf ${wine.drinkFrom}`;
+        }
+        return `Tot ${wine.drinkUntil}`;
     }
 
     // ============================
