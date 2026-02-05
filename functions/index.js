@@ -89,8 +89,19 @@ exports.analyzeWineLabel = functions.https.onRequest(async (req, res) => {
         "acidity": 1-5
     },
     "notes": "brief tasting notes or description",
-    "estimatedPrice": "estimated price range in euros"
+    "estimatedPrice": "estimated price range in euros",
+    "drinkFrom": year as number (estimated optimal drinking window start),
+    "drinkUntil": year as number (estimated optimal drinking window end)
 }
+
+For drinkFrom and drinkUntil, estimate based on wine type, grape variety, region, and vintage:
+- Simple white/rosé wines: drink within 1-3 years of vintage
+- Quality white wines (Burgundy, Riesling): 3-10 years
+- Light red wines (Beaujolais, Pinot Noir): 2-7 years
+- Medium red wines (Chianti, Rioja): 5-15 years
+- Full-bodied reds (Bordeaux, Barolo): 10-30+ years
+- Sparkling wines: 1-5 years (vintage Champagne: 10-20 years)
+- Dessert wines: 5-50+ years depending on quality
 
 If you cannot determine a value, use null. For type, make your best guess based on the wine name/region.
 Only respond with the JSON, no other text.`
