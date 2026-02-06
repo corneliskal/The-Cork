@@ -1008,6 +1008,9 @@ class WineCellar {
             // Consistente naamgeving: vergelijk met bestaande wijnen in kelder
             const existingWine = this.matchExistingWine(wineData);
             if (existingWine) {
+                // Update wineData zodat prijslookup ook de consistente naam gebruikt
+                wineData.name = existingWine.name;
+                wineData.producer = existingWine.producer;
                 document.getElementById('wineName').value = existingWine.name;
                 document.getElementById('wineProducer').value = existingWine.producer || '';
                 console.log('🔄 Naam overgenomen van bestaande wijn:', existingWine.name, existingWine.producer);
@@ -1038,8 +1041,11 @@ class WineCellar {
                 try {
                     const priceData = await this.lookupWinePrice(wineData);
                     if (priceData && priceData.price) {
-                        document.getElementById('winePrice').value = Math.round(priceData.price);
-                        console.log('💰 Gemini price:', priceData.price, 'Source:', priceData.source);
+                        const roundedPrice = Math.round(priceData.price);
+                        document.getElementById('winePrice').value = roundedPrice;
+                        console.log('💰 Prijs ingevuld:', roundedPrice, '(raw:', priceData.price, 'bron:', priceData.source, ')');
+                    } else {
+                        console.log('💰 Geen prijs gevonden. Response:', JSON.stringify(priceData));
                     }
                 } catch (priceError) {
                     console.log('Price lookup failed:', priceError);
