@@ -721,6 +721,23 @@
             </div>
         </div>
 
+        <!-- Year Input Modal -->
+        <div id="yearModal" class="modal">
+            <div class="modal-content year-modal">
+                <div class="modal-header">
+                    <h2>Jaartal ontbreekt</h2>
+                </div>
+                <div class="modal-body">
+                    <p>Het jaartal kon niet van het etiket worden gelezen. Voer het jaartal in voor een nauwkeurigere prijs en drinkadvies.</p>
+                    <input type="number" id="yearInput" class="form-input" placeholder="Bijv. 2020" min="1900" max="2099" inputmode="numeric">
+                    <div class="year-modal-buttons">
+                        <button id="yearSkipBtn" class="btn-secondary">Overslaan</button>
+                        <button id="yearConfirmBtn" class="btn-primary">Bevestigen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Toast Notification -->
         <div id="toast" class="toast">
             <span id="toastMessage"></span>
@@ -732,7 +749,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-    <script src="config.js?v=3"></script>
-    <script src="app.js?v=3"></script>
+    <script src="config.js?v=5"></script>
+    <script src="app.js?v=5"></script>
 </body>
 </html>

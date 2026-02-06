@@ -81,8 +81,8 @@ exports.analyzeWineLabel = functions.https.onRequest(async (req, res) => {
 
         const prompt = `Analyze this wine label image and extract the following information in JSON format:
 {
-    "name": "wine name",
-    "producer": "producer/house name",
+    "name": "wine name (the official wine name only, without the producer name)",
+    "producer": "producer/house name (château, domaine, winery or estate name - never use legal entity names like Société Civile, S.A., M.L.P., SRL, GmbH etc.)",
     "year": year as number or null,
     "region": "region, country",
     "grape": "grape variety/varieties",
@@ -105,6 +105,12 @@ For drinkFrom and drinkUntil, estimate based on wine type, grape variety, region
 - Full-bodied reds (Bordeaux, Barolo): 10-30+ years
 - Sparkling wines: 1-5 years (vintage Champagne: 10-20 years)
 - Dessert wines: 5-50+ years depending on quality
+
+Naming examples:
+- Château Pétrus label → name: "Pétrus", producer: "Château Pétrus"
+- Tenuta San Guido Sassicaia → name: "Sassicaia", producer: "Tenuta San Guido"
+- Domaine de la Romanée-Conti → name: "Romanée-Conti", producer: "Domaine de la Romanée-Conti"
+- Opus One by Mondavi & Rothschild → name: "Opus One", producer: "Opus One Winery"
 
 If you cannot determine a value, use null. For type, make your best guess based on the wine name/region.
 Only respond with the JSON, no other text.`;

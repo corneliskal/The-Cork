@@ -1005,6 +1005,33 @@ class WineCellar {
             const wineData = await this.callChatGPTVision(imageData);
             this.populateForm(wineData);
 
+            // Consistente naamgeving: vergelijk met bestaande wijnen in kelder
+            const existingWine = this.matchExistingWine(wineData);
+            if (existingWine) {
+                document.getElementById('wineName').value = existingWine.name;
+                document.getElementById('wineProducer').value = existingWine.producer || '';
+                console.log('🔄 Naam overgenomen van bestaande wijn:', existingWine.name, existingWine.producer);
+            }
+
+            // Als jaartal ontbreekt, vraag de gebruiker
+            if (!wineData.year) {
+                indicator.classList.add('hidden');
+                const userYear = await this.promptForYear();
+                indicator.classList.remove('hidden');
+                if (userYear) {
+                    wineData.year = userYear;
+                    document.getElementById('wineYear').value = userYear;
+                    // Herbereken drink window op basis van wijntype
+                    const drinkWindow = this.estimateDrinkWindow(wineData);
+                    document.getElementById('drinkFrom').value = drinkWindow.from || '';
+                    document.getElementById('drinkUntil').value = drinkWindow.until || '';
+                } else {
+                    // Overgeslagen: wis drink window
+                    document.getElementById('drinkFrom').value = '';
+                    document.getElementById('drinkUntil').value = '';
+                }
+            }
+
             // Zoek prijs via Gemini met Google Search
             if (wineData.name) {
                 indicatorText.textContent = 'Zoeken naar prijsinformatie...';
@@ -1082,6 +1109,102 @@ class WineCellar {
         } catch (error) {
             console.error('Price lookup error:', error);
             return null;
+        }
+    }
+
+    matchExistingWine(wineData) {
+        if (!this.wines.length || !wineData.name) return null;
+
+        const normalize = (str) => (str || '').toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove accents
+            .replace(/[''`]/g, '')
+            .replace(/ch[aâ]teau|chateau|domaine|tenuta|bodega|weingut|maison|cave/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        const scanName = normalize(wineData.name);
+        const scanProducer = normalize(wineData.producer);
+
+        return this.wines.find(wine => {
+            const existingName = normalize(wine.name);
+            const existingProducer = normalize(wine.producer);
+
+            // Naam moet matchen (exact of bevat)
+            const nameMatch = existingName === scanName
+                || existingName.includes(scanName)
+                || scanName.includes(existingName);
+
+            if (!nameMatch) return false;
+
+            // Als beide een producer hebben, moet die ook matchen
+            if (wine.producer && wineData.producer) {
+                const producerMatch = existingProducer === scanProducer
+                    || existingProducer.includes(scanProducer)
+                    || scanProducer.includes(existingProducer);
+                return producerMatch;
+            }
+
+            return true;
+        });
+    }
+
+    promptForYear() {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('yearModal');
+            const input = document.getElementById('yearInput');
+            const confirmBtn = document.getElementById('yearConfirmBtn');
+            const skipBtn = document.getElementById('yearSkipBtn');
+
+            input.value = '';
+            modal.classList.add('active');
+            setTimeout(() => input.focus(), 350); // Wait for modal animation
+
+            const cleanup = () => {
+                modal.classList.remove('active');
+                confirmBtn.onclick = null;
+                skipBtn.onclick = null;
+            };
+
+            confirmBtn.onclick = () => {
+                const year = parseInt(input.value);
+                cleanup();
+                resolve(year && year >= 1900 && year <= 2099 ? year : null);
+            };
+
+            skipBtn.onclick = () => {
+                cleanup();
+                resolve(null);
+            };
+        });
+    }
+
+    estimateDrinkWindow(wineData) {
+        const year = parseInt(wineData.year);
+        if (!year) return { from: null, until: null };
+
+        const type = (wineData.type || 'red').toLowerCase();
+        const grape = (wineData.grape || '').toLowerCase();
+
+        switch (type) {
+            case 'white':
+                // Kwaliteitswijnen langer houdbaar
+                if (grape.includes('riesling') || grape.includes('chardonnay')) {
+                    return { from: year + 1, until: year + 8 };
+                }
+                return { from: year, until: year + 3 };
+            case 'rosé':
+                return { from: year, until: year + 2 };
+            case 'sparkling':
+                return { from: year, until: year + 5 };
+            case 'dessert':
+                return { from: year + 2, until: year + 20 };
+            case 'red':
+            default:
+                // Full-bodied reds langer houdbaar
+                if (grape.includes('cabernet') || grape.includes('nebbiolo') || grape.includes('sangiovese')) {
+                    return { from: year + 3, until: year + 15 };
+                }
+                return { from: year + 2, until: year + 10 };
         }
     }
 
