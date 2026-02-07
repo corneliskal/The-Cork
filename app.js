@@ -1052,6 +1052,22 @@ class WineCellar {
                 }
             }
 
+            // Zoek productfoto via Serper.dev
+            if (wineData.name) {
+                indicatorText.textContent = 'Productfoto zoeken...';
+                try {
+                    const imageUrl = await this.searchWineImage(wineData);
+                    if (imageUrl) {
+                        await this.loadExternalImage(imageUrl);
+                        console.log('🖼️ Productfoto geladen:', imageUrl);
+                    } else {
+                        console.log('🖼️ Geen productfoto gevonden, gebruiker foto blijft');
+                    }
+                } catch (imgError) {
+                    console.log('Image search failed:', imgError);
+                }
+            }
+
             this.showToast('Wijn herkend!');
 
             indicator.classList.add('hidden');
@@ -1114,6 +1130,50 @@ class WineCellar {
             return result.data;
         } catch (error) {
             console.error('Price lookup error:', error);
+            return null;
+        }
+    }
+
+    async searchWineImage(wineData) {
+        console.log('🖼️ Starting Serper image search for:', wineData.name, wineData.producer, wineData.year);
+
+        if (!CONFIG.FUNCTIONS?.searchWineImage) {
+            console.log('❌ Image search not configured in CONFIG');
+            return null;
+        }
+
+        const idToken = await this.getIdToken();
+        if (!idToken) {
+            console.log('Not authenticated for image search');
+            return null;
+        }
+
+        try {
+            const response = await fetch(CONFIG.FUNCTIONS.searchWineImage, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    name: wineData.name,
+                    producer: wineData.producer,
+                    year: wineData.year,
+                    type: wineData.type
+                })
+            });
+
+            if (!response.ok) {
+                console.error('Image search API error:', response.status);
+                return null;
+            }
+
+            const result = await response.json();
+            console.log('🖼️ Image search result:', result);
+
+            return result.data?.imageUrl || null;
+        } catch (error) {
+            console.error('Image search error:', error);
             return null;
         }
     }

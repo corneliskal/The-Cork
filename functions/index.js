@@ -8,6 +8,7 @@ admin.initializeApp();
 // Get API keys from Firebase environment config
 // Set these with: firebase functions:config:set gemini.key="AIza..."
 const getGeminiKey = () => functions.config().gemini?.key;
+const getSerperKey = () => functions.config().serper?.key;
 
 // Middleware to verify Firebase Auth
 const verifyAuth = async (req, res) => {
@@ -237,12 +238,91 @@ If you cannot find a reliable price, return:
 });
 
 // ================================
+// Serper.dev Image Search - Find wine product photo
+// ================================
+exports.searchWineImage = functions.https.onRequest(async (req, res) => {
+    // CORS headers
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+        res.status(204).send('');
+        return;
+    }
+
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method not allowed' });
+        return;
+    }
+
+    const user = await verifyAuth(req, res);
+    if (!user) return;
+
+    const serperKey = getSerperKey();
+    if (!serperKey) {
+        res.json({ success: true, data: null, message: 'Serper API not configured' });
+        return;
+    }
+
+    try {
+        const { name, producer, year, type } = req.body;
+        if (!name) {
+            res.status(400).json({ error: 'Wine name is required' });
+            return;
+        }
+
+        const query = [name, producer, year, 'wine bottle'].filter(Boolean).join(' ');
+        console.log('🖼️ Serper image search for:', query);
+
+        const response = await fetch('https://google.serper.dev/images', {
+            method: 'POST',
+            headers: {
+                'X-API-KEY': serperKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ q: query, num: 10 })
+        });
+
+        if (!response.ok) {
+            console.error('Serper API error:', response.status);
+            res.json({ success: true, data: null, message: 'Serper API error' });
+            return;
+        }
+
+        const data = await response.json();
+        console.log('🖼️ Serper results:', data.images?.length || 0, 'images');
+
+        // Find first image that's large enough to be a good product photo
+        const image = data.images?.find(img =>
+            img.imageUrl &&
+            img.imageWidth > 200 &&
+            img.imageHeight > 200
+        );
+
+        res.json({
+            success: true,
+            data: {
+                imageUrl: image?.imageUrl || null,
+                thumbnail: image?.thumbnailUrl || null,
+                source: image?.source || null
+            }
+        });
+
+    } catch (error) {
+        console.error('Serper image search error:', error);
+        res.json({ success: true, data: null, message: error.message });
+    }
+});
+
+// ================================
 // Health check endpoint
 // ================================
 exports.health = functions.https.onRequest((req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.json({
         status: 'ok',
-        geminiConfigured: !!getGeminiKey()
+        geminiConfigured: !!getGeminiKey(),
+        serperConfigured: !!getSerperKey()
     });
 });
