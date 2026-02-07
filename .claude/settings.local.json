@@ -6,7 +6,9 @@
       "Bash(curl:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nProductfoto zoeken via Serper.dev\n\nNieuwe searchWineImage Cloud Function die via Serper.dev Google Images\nAPI een productfoto zoekt na de labelanalyse en prijslookup.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "WebFetch(domain:serper.dev)",
+      "WebFetch(domain:google.serper.dev)"
     ]
   }
 }
