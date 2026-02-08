@@ -581,6 +581,30 @@ body {
     transform: scale(0.94);
 }
 
+/* Wine Card Enriching Indicator */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.wine-enriching-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--font-caption2);
+    color: var(--wine-secondary);
+    font-weight: 500;
+}
+
+.enriching-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 1.5px solid var(--separator-opaque);
+    border-top-color: var(--wine-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
 /* ============================
    Modal Sheets - iOS Style
    ============================ */
