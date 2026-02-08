@@ -67,7 +67,7 @@ exports.analyzeWineLabel = functions.https.onRequest(async (req, res) => {
 
         // Initialize Gemini
         const genAI = new GoogleGenerativeAI(geminiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         // Extract base64 data (remove data URL prefix if present)
         let base64Data = imageBase64;
@@ -187,7 +187,7 @@ exports.lookupWinePrice = functions.https.onRequest((req, res) => {
             // Initialize Gemini with Google Search grounding
             const genAI = new GoogleGenerativeAI(geminiKey);
             const model = genAI.getGenerativeModel({
-                model: 'gemini-2.0-flash',
+                model: 'gemini-2.5-flash',
                 tools: [{
                     googleSearch: {}
                 }]
@@ -272,7 +272,7 @@ exports.searchWineImage = functions.https.onRequest(async (req, res) => {
             return;
         }
 
-        const query = [name, producer, year, 'wine bottle'].filter(Boolean).join(' ');
+        const query = [name, producer, year, 'wine bottle png'].filter(Boolean).join(' ');
         console.log('🖼️ Serper image search for:', query);
 
         const response = await fetch('https://google.serper.dev/images', {
@@ -293,19 +293,39 @@ exports.searchWineImage = functions.https.onRequest(async (req, res) => {
         const data = await response.json();
         console.log('🖼️ Serper results:', data.images?.length || 0, 'images');
 
-        // Find first image that's large enough to be a good product photo
-        const image = data.images?.find(img =>
+        // Find suitable images (large enough, not from vivino)
+        const candidates = data.images?.filter(img =>
             img.imageUrl &&
             img.imageWidth > 200 &&
-            img.imageHeight > 200
-        );
+            img.imageHeight > 200 &&
+            !img.imageUrl.includes('vivino.com')
+        ) || [];
+
+        // Try to fetch image server-side to avoid CORS issues
+        let imageBase64 = null;
+        let usedImage = null;
+        for (const img of candidates.slice(0, 5)) {
+            try {
+                const imgResponse = await fetch(img.imageUrl, { redirect: 'follow' });
+                if (!imgResponse.ok) continue;
+                const contentType = imgResponse.headers.get('content-type') || 'image/jpeg';
+                if (!contentType.startsWith('image/')) continue;
+                const buffer = await imgResponse.arrayBuffer();
+                if (buffer.byteLength > 2 * 1024 * 1024) continue; // skip > 2MB
+                imageBase64 = `data:${contentType};base64,${Buffer.from(buffer).toString('base64')}`;
+                usedImage = img;
+                break;
+            } catch (e) {
+                console.log('Failed to fetch image:', img.imageUrl, e.message);
+            }
+        }
 
         res.json({
             success: true,
             data: {
-                imageUrl: image?.imageUrl || null,
-                thumbnail: image?.thumbnailUrl || null,
-                source: image?.source || null
+                imageUrl: usedImage?.imageUrl || null,
+                imageBase64: imageBase64,
+                source: usedImage?.source || null
             }
         });
 

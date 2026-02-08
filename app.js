@@ -1056,10 +1056,13 @@ class WineCellar {
             if (wineData.name) {
                 indicatorText.textContent = 'Productfoto zoeken...';
                 try {
-                    const imageUrl = await this.searchWineImage(wineData);
-                    if (imageUrl) {
-                        await this.loadExternalImage(imageUrl);
-                        console.log('🖼️ Productfoto geladen:', imageUrl);
+                    const imageBase64 = await this.searchWineImage(wineData);
+                    if (imageBase64) {
+                        this.currentImage = imageBase64;
+                        const preview = document.getElementById('previewImg');
+                        preview.src = imageBase64;
+                        document.getElementById('imagePreview').classList.add('has-image');
+                        console.log('🖼️ Productfoto geladen via server proxy');
                     } else {
                         console.log('🖼️ Geen productfoto gevonden, gebruiker foto blijft');
                     }
@@ -1171,7 +1174,7 @@ class WineCellar {
             const result = await response.json();
             console.log('🖼️ Image search result:', result);
 
-            return result.data?.imageUrl || null;
+            return result.data?.imageBase64 || null;
         } catch (error) {
             console.error('Image search error:', error);
             return null;

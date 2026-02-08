@@ -455,7 +455,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    background: var(--bg-tertiary);
+    background: #ffffff;
 }
 
 .wine-card-image .placeholder-image {
