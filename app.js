@@ -1005,15 +1005,12 @@ class WineCellar {
 
         try {
             const wineData = await this.callChatGPTVision(imageData);
-            this.populateForm(wineData);
 
             // Consistente naamgeving: vergelijk met bestaande wijnen in kelder
             const existingWine = this.matchExistingWine(wineData);
             if (existingWine) {
                 wineData.name = existingWine.name;
                 wineData.producer = existingWine.producer;
-                document.getElementById('wineName').value = existingWine.name;
-                document.getElementById('wineProducer').value = existingWine.producer || '';
                 console.log('🔄 Naam overgenomen van bestaande wijn:', existingWine.name, existingWine.producer);
             }
 
@@ -1023,26 +1020,46 @@ class WineCellar {
                 const userYear = await this.promptForYear();
                 if (userYear) {
                     wineData.year = userYear;
-                    document.getElementById('wineYear').value = userYear;
-                    const drinkWindow = this.estimateDrinkWindow(wineData);
-                    document.getElementById('drinkFrom').value = drinkWindow.from || '';
-                    document.getElementById('drinkUntil').value = drinkWindow.until || '';
-                } else {
-                    document.getElementById('drinkFrom').value = '';
-                    document.getElementById('drinkUntil').value = '';
                 }
             }
 
-            // Form is nu klaar — indicator weg, gebruiker kan opslaan
+            // Auto-save: sla wijn direct op en sluit modal
             indicator.classList.add('hidden');
-            this.showToast('Wijn herkend!');
 
-            // Genereer een tijdelijk ID zodat we de wijn later kunnen bijwerken
-            this.pendingEnrichId = Date.now().toString();
-            this.pendingWineData = wineData;
+            const enrichId = Date.now().toString();
+            const chars = wineData.characteristics || {};
+            const drinkWindow = wineData.year ? this.estimateDrinkWindow(wineData) : {};
+            const savedWine = {
+                id: enrichId,
+                enrichId: enrichId,
+                name: wineData.name || 'Onbekende wijn',
+                producer: wineData.producer || null,
+                type: wineData.type || 'red',
+                year: wineData.year || null,
+                region: wineData.region || null,
+                grape: wineData.grape || null,
+                boldness: chars.boldness || 3,
+                tannins: chars.tannins || 3,
+                acidity: chars.acidity || 3,
+                price: null,
+                quantity: 1,
+                store: null,
+                drinkFrom: wineData.drinkFrom || drinkWindow.from || null,
+                drinkUntil: wineData.drinkUntil || drinkWindow.until || null,
+                notes: wineData.notes || null,
+                image: this.currentImage,
+                addedAt: new Date().toISOString()
+            };
 
-            // Start prijs + foto ophalen op de achtergrond (niet-blokkerend)
-            this.enrichWineInBackground(this.pendingEnrichId, wineData);
+            this.wines.unshift(savedWine);
+            this.saveWines();
+            this.renderWineList();
+            this.updateStats();
+            this.closeModal('addModal');
+            this.showToast('Wijn herkend en opgeslagen!');
+
+            // Start prijs + foto ophalen op de achtergrond
+            this.enrichWineInBackground(enrichId, wineData);
 
         } catch (error) {
             console.error('Vision API error:', error);
@@ -1086,13 +1103,6 @@ class WineCellar {
             if (priceData && priceData.price) {
                 const roundedPrice = Math.round(priceData.price);
                 console.log('💰 Prijs gevonden (achtergrond):', roundedPrice);
-
-                // Als form nog open is met dezelfde wijn, vul in
-                if (this.pendingEnrichId === enrichId) {
-                    document.getElementById('winePrice').value = roundedPrice;
-                }
-
-                // Als wijn al opgeslagen is, update in lijst
                 this.updateSavedWine(enrichId, { price: roundedPrice });
             }
             this.checkEnrichmentDone(enrichId);
@@ -1105,15 +1115,6 @@ class WineCellar {
 
             if (imageBase64) {
                 console.log('🖼️ Productfoto gevonden (achtergrond)');
-
-                // Als form nog open is, update preview
-                if (this.pendingEnrichId === enrichId) {
-                    this.currentImage = imageBase64;
-                    document.getElementById('previewImg').src = imageBase64;
-                    document.getElementById('imagePreview').classList.add('has-image');
-                }
-
-                // Als wijn al opgeslagen is, update in lijst
                 this.updateSavedWine(enrichId, { image: imageBase64 });
             }
             this.checkEnrichmentDone(enrichId);
@@ -1500,12 +1501,6 @@ class WineCellar {
             image: this.currentImage,
             addedAt: this.editMode ? this.wines.find(w => w.id === this.currentWineId)?.addedAt : new Date().toISOString()
         };
-
-        // Koppel enrichId zodat achtergrondprocessen de wijn kunnen bijwerken
-        if (this.pendingEnrichId && !this.editMode) {
-            wineData.enrichId = this.pendingEnrichId;
-            this.pendingEnrichId = null;
-        }
 
         if (this.editMode) {
             const index = this.wines.findIndex(w => w.id === this.currentWineId);

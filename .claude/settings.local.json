@@ -8,7 +8,15 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nProductfoto zoeken via Serper.dev\n\nNieuwe searchWineImage Cloud Function die via Serper.dev Google Images\nAPI een productfoto zoekt na de labelanalyse en prijslookup.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git push:*)",
       "WebFetch(domain:serper.dev)",
-      "WebFetch(domain:google.serper.dev)"
+      "WebFetch(domain:google.serper.dev)",
+      "Bash(git -C \"C:\\\\Users\\\\kalma497\\\\Desktop\\\\The-Cork\" status)",
+      "Bash(git -C \"C:\\\\Users\\\\kalma497\\\\Desktop\\\\The-Cork\" diff)",
+      "Bash(git -C \"C:\\\\Users\\\\kalma497\\\\Desktop\\\\The-Cork\" add app.js functions/index.js index.html styles.css)",
+      "Bash(git -C \"C:\\\\Users\\\\kalma497\\\\Desktop\\\\The-Cork\" commit -m \"$\\(cat <<''EOF''\nGemini 2.5 migratie, image proxy en UI verbeteringen\n\n- Gemini 2.0 Flash → 2.5 Flash \\(analyzeWineLabel + lookupWinePrice\\)\n- Productfoto server-side ophalen als base64 \\(CORS fix\\)\n- Vivino uitgesloten van image search resultaten\n- PNG toegevoegd aan zoekquery voor betere productfoto''s\n- Witte achtergrond voor thumbnails in list view\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C \"C:\\\\Users\\\\kalma497\\\\Desktop\\\\The-Cork\" push)",
+      "Bash(git -C \"C:\\\\Users\\\\kalma497\\\\Desktop\\\\The-Cork\" add app.js index.html styles.css)",
+      "Bash(git -C \"C:\\\\Users\\\\kalma497\\\\Desktop\\\\The-Cork\" commit -m \"$\\(cat <<''EOF''\nAchtergrond verrijking: prijs en foto niet-blokkerend\n\nNa etiketherkenning + jaartal is het formulier direct beschikbaar.\nPrijs en productfoto worden parallel op de achtergrond opgehaald.\nBij opslaan voor afronding worden ze later bijgewerkt in de lijst\nmet een ''verrijken...'' spinner indicator op de wine card.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)"
     ]
   }
 }
