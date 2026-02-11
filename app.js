@@ -217,6 +217,7 @@ class WineCellar {
         this.currentImage = null;
         this.searchQuery = '';
         this.archiveSearchQuery = '';
+        this.verifyNewData = null;
 
         // Archive modal state
         this.archiveRating = 0;
@@ -225,8 +226,10 @@ class WineCellar {
         // Background processing: wineId → { priceLoading, imageLoading }
         this.backgroundProcessing = new Map();
 
-        // Sort state
-        this.sortBy = 'recent'; // 'recent' or 'drinkability'
+        // Sort and filter state
+        this.sortBy = 'recent'; // 'recent', 'drinkability', 'price_asc', 'price_desc'
+        this.typeFilter = 'all'; // 'all', 'red', 'white', 'rosé', 'sparkling', 'dessert'
+        this.drinkabilityFilter = 'all'; // 'all', 'perfect', 'soon'
 
         // Firebase
         this.db = null;
@@ -486,7 +489,7 @@ class WineCellar {
         const loginScreen = document.getElementById('loginScreen');
         const mainContent = document.querySelector('.main-content');
         const fab = document.getElementById('addWineBtn');
-        const searchContainer = document.getElementById('searchContainer');
+        const filterBar = document.getElementById('filterBar');
 
         if (isLoggedIn) {
             // Show app content
@@ -498,7 +501,7 @@ class WineCellar {
             if (loginScreen) loginScreen.classList.remove('hidden');
             if (mainContent) mainContent.classList.add('hidden');
             if (fab) fab.classList.add('hidden');
-            if (searchContainer) searchContainer.classList.add('hidden');
+            if (filterBar) filterBar.classList.add('hidden');
         }
     }
 
@@ -734,10 +737,79 @@ class WineCellar {
             searchInput.focus();
         });
 
-        // Sort functionality
-        document.getElementById('sortSelect')?.addEventListener('change', (e) => {
-            this.sortBy = e.target.value;
-            this.sortAndRenderWines();
+        // Filter button and dropdown
+        document.getElementById('filterBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const filterDropdown = document.getElementById('filterDropdown');
+            const sortDropdown = document.getElementById('sortDropdown');
+            sortDropdown?.classList.add('hidden'); // Close sort if open
+            filterDropdown?.classList.toggle('hidden');
+        });
+
+        // Sort button and dropdown
+        document.getElementById('sortBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sortDropdown = document.getElementById('sortDropdown');
+            const filterDropdown = document.getElementById('filterDropdown');
+            filterDropdown?.classList.add('hidden'); // Close filter if open
+            sortDropdown?.classList.toggle('hidden');
+        });
+
+        // Sort options
+        document.querySelectorAll('#sortDropdown .control-option').forEach(option => {
+            option.addEventListener('click', (e) => {
+                const sortValue = e.currentTarget.dataset.sort;
+                this.sortBy = sortValue;
+
+                // Update active state
+                document.querySelectorAll('#sortDropdown .control-option').forEach(opt => opt.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+
+                // Close dropdown and re-render
+                document.getElementById('sortDropdown')?.classList.add('hidden');
+                this.sortAndRenderWines();
+            });
+        });
+
+        // Filter options
+        document.querySelectorAll('#filterDropdown .control-option').forEach(option => {
+            option.addEventListener('click', (e) => {
+                const filterType = e.currentTarget.dataset.filter;
+                const filterValue = e.currentTarget.dataset.value;
+
+                if (filterType === 'type') {
+                    this.typeFilter = filterValue;
+                    // Update active state for type section
+                    document.querySelectorAll('[data-filter="type"]').forEach(opt => opt.classList.remove('active'));
+                } else if (filterType === 'drinkability') {
+                    this.drinkabilityFilter = filterValue;
+                    // Update active state for drinkability section
+                    document.querySelectorAll('[data-filter="drinkability"]').forEach(opt => opt.classList.remove('active'));
+                }
+
+                e.currentTarget.classList.add('active');
+
+                // Re-render with filters
+                this.renderWineList();
+            });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            const sortDropdown = document.getElementById('sortDropdown');
+            const filterDropdown = document.getElementById('filterDropdown');
+            const sortBtn = document.getElementById('sortBtn');
+            const filterBtn = document.getElementById('filterBtn');
+
+            if (sortDropdown && !sortDropdown.classList.contains('hidden') &&
+                !sortDropdown.contains(e.target) && !sortBtn?.contains(e.target)) {
+                sortDropdown.classList.add('hidden');
+            }
+
+            if (filterDropdown && !filterDropdown.classList.contains('hidden') &&
+                !filterDropdown.contains(e.target) && !filterBtn?.contains(e.target)) {
+                filterDropdown.classList.add('hidden');
+            }
         });
 
         // FAB button
@@ -807,8 +879,15 @@ class WineCellar {
         document.getElementById('detailDecrease')?.addEventListener('click', () => this.updateDetailQuantity(-1));
 
         // Detail modal actions
+        document.getElementById('verifyWineBtn')?.addEventListener('click', () => this.openVerifyModal());
         document.getElementById('editWineBtn')?.addEventListener('click', () => this.editCurrentWine());
         document.getElementById('deleteWineBtn')?.addEventListener('click', () => this.openDeleteModal());
+
+        // Verify modal
+        document.getElementById('verifyModalCloseBtn')?.addEventListener('click', () => this.closeModal('verifyModal'));
+        document.getElementById('reanalyzeBtn')?.addEventListener('click', () => this.reanalyzeWine());
+        document.getElementById('verifyResultsCancelBtn')?.addEventListener('click', () => this.closeVerifyResults());
+        document.getElementById('verifyResultsApplyBtn')?.addEventListener('click', () => this.applyVerifyResults());
 
         // Google Sign-In / Sign-Out buttons
         document.getElementById('googleSignInBtn')?.addEventListener('click', () => this.signInWithGoogle());
@@ -888,8 +967,15 @@ class WineCellar {
     // ============================
 
     openModal(modalId) {
-        document.getElementById(modalId).classList.add('active');
+        const modal = document.getElementById(modalId);
+        modal.classList.add('active');
         document.body.style.overflow = 'hidden';
+
+        // Scroll modal content to top
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.scrollTop = 0;
+        }
     }
 
     closeModal(modalId) {
@@ -1522,14 +1608,11 @@ class WineCellar {
     // ============================
 
     updateSearchVisibility() {
-        const searchContainer = document.getElementById('searchContainer');
-        const sortBar = document.getElementById('sortBar');
+        const filterBar = document.getElementById('filterBar');
         if (this.wines.length > 0) {
-            searchContainer?.classList.remove('hidden');
-            sortBar?.classList.remove('hidden');
+            filterBar?.classList.remove('hidden');
         } else {
-            searchContainer?.classList.add('hidden');
-            sortBar?.classList.add('hidden');
+            filterBar?.classList.add('hidden');
         }
     }
 
@@ -1628,7 +1711,20 @@ class WineCellar {
         const emptyState = document.getElementById('emptyState');
 
         // Determine which wines to show
-        const winesToShow = this.searchQuery ? this.filteredWines : this.wines;
+        let winesToShow = this.searchQuery ? this.filteredWines : this.wines;
+
+        // Apply type filter
+        if (this.typeFilter !== 'all') {
+            winesToShow = winesToShow.filter(wine => wine.type === this.typeFilter);
+        }
+
+        // Apply drinkability filter
+        if (this.drinkabilityFilter !== 'all') {
+            winesToShow = winesToShow.filter(wine => {
+                const status = this.getDrinkStatus(wine);
+                return status.status === this.drinkabilityFilter;
+            });
+        }
 
         if (this.wines.length === 0) {
             list.innerHTML = '';
@@ -1689,6 +1785,7 @@ class WineCellar {
                             <p class="wine-card-meta">${this.highlightMatch([wine.grape, wine.year].filter(Boolean).join(' · ') || wine.region || 'No details')}</p>
                             <div class="wine-card-footer">
                                 <span class="wine-type-tag ${wine.type}">${wine.type}</span>
+                                ${wine.quantity > 1 ? `<span class="wine-quantity-badge">${wine.quantity}x</span>` : ''}
                                 ${wine.price ? `<span class="wine-price-tag">€${wine.price}</span>` : ''}
                                 ${isProcessing ? '<span class="wine-enriching-tag"><span class="enriching-spinner"></span>verrijken...</span>' : ''}
                                 ${drinkStatus.label ? `<span class="wine-drink-status ${drinkStatus.class}">${drinkStatus.label}</span>` : ''}
@@ -2434,6 +2531,256 @@ class WineCellar {
             return `Vanaf ${wine.drinkFrom}`;
         }
         return `Tot ${wine.drinkUntil}`;
+    }
+
+    // ============================
+    // Wine Verification
+    // ============================
+
+    openVerifyModal() {
+        const wine = this.wines.find(w => w.id === this.currentWineId);
+        if (!wine) return;
+
+        // Close detail modal first
+        this.closeModal('detailModal');
+
+        // Wait a bit for animation, then open verify modal
+        setTimeout(() => {
+            // Pre-fill fields with current wine data
+            document.getElementById('verifyName').value = wine.name || '';
+            document.getElementById('verifyProducer').value = wine.producer || '';
+            document.getElementById('verifyYear').value = wine.year || '';
+            document.getElementById('verifyGrape').value = wine.grape || '';
+            document.getElementById('verifyRegion').value = wine.region || '';
+
+            // Reset states
+            document.getElementById('verifyFormSection').classList.remove('hidden');
+            document.getElementById('verifyLoading').classList.add('hidden');
+            document.getElementById('verifyResults').classList.add('hidden');
+
+            this.openModal('verifyModal');
+        }, 200);
+    }
+
+    async reanalyzeWine() {
+        // Get updated values from form
+        const name = document.getElementById('verifyName').value.trim();
+        const producer = document.getElementById('verifyProducer').value.trim();
+        const year = document.getElementById('verifyYear').value;
+        const grape = document.getElementById('verifyGrape').value.trim();
+        const region = document.getElementById('verifyRegion').value.trim();
+
+        if (!name) {
+            this.showToast('Vul minimaal de wijn naam in');
+            return;
+        }
+
+        // Show loading state IN the modal
+        document.getElementById('verifyFormSection').classList.add('hidden');
+        document.getElementById('verifyLoading').classList.remove('hidden');
+        document.getElementById('verifyResults').classList.add('hidden');
+
+        try {
+            const idToken = await firebase.auth().currentUser.getIdToken();
+            const response = await fetch(CONFIG.FUNCTIONS.deepAnalyzeWineLabel, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    name: name,
+                    producer: producer,
+                    year: year ? parseInt(year) : null,
+                    grape: grape,
+                    region: region
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                // Store the new data
+                this.verifyNewData = result.data;
+
+                // Fetch price and photo in parallel
+                const enrichmentPromises = [];
+
+                // Search for product photo
+                enrichmentPromises.push(
+                    fetch(CONFIG.FUNCTIONS.searchWineImage, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({
+                            name: result.data.name,
+                            producer: result.data.producer,
+                            year: result.data.year,
+                            type: result.data.type
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(photoResult => {
+                        if (photoResult.success && photoResult.data?.imageBase64) {
+                            this.verifyNewData.newImage = photoResult.data.imageBase64;
+                        }
+                    })
+                    .catch(e => console.log('Photo search failed:', e))
+                );
+
+                // Lookup wine price
+                enrichmentPromises.push(
+                    fetch(CONFIG.FUNCTIONS.lookupWinePrice, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({
+                            name: result.data.name,
+                            producer: result.data.producer,
+                            year: result.data.year,
+                            region: result.data.region
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(priceResult => {
+                        if (priceResult.success && priceResult.data?.price) {
+                            this.verifyNewData.price = priceResult.data.price;
+                        }
+                    })
+                    .catch(e => console.log('Price lookup failed:', e))
+                );
+
+                // Wait for both to complete
+                await Promise.all(enrichmentPromises);
+
+                // Show results
+                this.showVerifyResults(result.data);
+            } else {
+                this.showToast('Geen resultaten gevonden');
+                // Back to form
+                document.getElementById('verifyFormSection').classList.remove('hidden');
+                document.getElementById('verifyLoading').classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Reanalyze error:', error);
+            this.showToast('Fout bij opnieuw analyseren');
+            // Back to form
+            document.getElementById('verifyFormSection').classList.remove('hidden');
+            document.getElementById('verifyLoading').classList.add('hidden');
+        }
+    }
+
+    showVerifyResults(data) {
+        // Format results nicely with product photo
+        const content = `
+            ${data.newImage ? `
+            <div class="verify-result-photo">
+                <img src="${data.newImage}" alt="${data.name}">
+            </div>
+            ` : ''}
+            <div class="verify-result-item">
+                <span class="verify-result-label">Wijn naam:</span>
+                <span class="verify-result-value">${data.name || '-'}</span>
+            </div>
+            <div class="verify-result-item">
+                <span class="verify-result-label">Producent:</span>
+                <span class="verify-result-value">${data.producer || '-'}</span>
+            </div>
+            <div class="verify-result-item">
+                <span class="verify-result-label">Jaartal:</span>
+                <span class="verify-result-value">${data.year || '-'}</span>
+            </div>
+            <div class="verify-result-item">
+                <span class="verify-result-label">Druif:</span>
+                <span class="verify-result-value">${data.grape || '-'}</span>
+            </div>
+            <div class="verify-result-item">
+                <span class="verify-result-label">Regio:</span>
+                <span class="verify-result-value">${data.region || '-'}</span>
+            </div>
+            <div class="verify-result-item">
+                <span class="verify-result-label">Type:</span>
+                <span class="verify-result-value">${data.type || '-'}</span>
+            </div>
+            ${data.price ? `
+            <div class="verify-result-item">
+                <span class="verify-result-label">Prijs:</span>
+                <span class="verify-result-value">€${data.price}</span>
+            </div>
+            ` : ''}
+            ${data.notes ? `
+            <div class="verify-result-item verify-result-notes">
+                <span class="verify-result-label">Notes:</span>
+                <span class="verify-result-value">${data.notes}</span>
+            </div>
+            ` : ''}
+        `;
+
+        document.getElementById('verifyResultsContent').innerHTML = content;
+
+        // Show results section
+        document.getElementById('verifyLoading').classList.add('hidden');
+        document.getElementById('verifyResults').classList.remove('hidden');
+    }
+
+    closeVerifyResults() {
+        // Back to form
+        document.getElementById('verifyFormSection').classList.remove('hidden');
+        document.getElementById('verifyResults').classList.add('hidden');
+        this.verifyNewData = null;
+    }
+
+    async applyVerifyResults() {
+        if (!this.verifyNewData) return;
+
+        const wine = this.wines.find(w => w.id === this.currentWineId);
+        if (!wine) {
+            this.showToast('Wijn niet gevonden');
+            return;
+        }
+
+        const newData = this.verifyNewData;
+
+        // Update wine with new data
+        wine.name = newData.name || wine.name;
+        wine.producer = newData.producer || wine.producer;
+        wine.year = newData.year || wine.year;
+        wine.grape = newData.grape || wine.grape;
+        wine.region = newData.region || wine.region;
+        wine.type = newData.type || wine.type;
+        wine.notes = newData.notes || wine.notes;
+
+        if (newData.characteristics) {
+            wine.boldness = newData.characteristics.boldness || wine.boldness;
+            wine.tannins = newData.characteristics.tannins || wine.tannins;
+            wine.acidity = newData.characteristics.acidity || wine.acidity;
+        }
+
+        wine.drinkFrom = newData.drinkFrom || wine.drinkFrom;
+        wine.drinkUntil = newData.drinkUntil || wine.drinkUntil;
+
+        // Update photo if available
+        if (newData.newImage) {
+            wine.image = newData.newImage;
+        }
+
+        // Update price if available
+        if (newData.price) {
+            wine.price = newData.price;
+        }
+
+        // Save and update UI
+        await this.saveWines();
+        this.renderWineList();
+        this.closeModal('verifyModal');
+        this.showWineDetail(wine.id);
+        this.showToast('✓ Wijn gegevens bijgewerkt!');
+
+        this.verifyNewData = null;
     }
 
     // ============================

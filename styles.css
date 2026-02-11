@@ -120,7 +120,7 @@ body {
 .header {
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 200;
     background: rgba(242, 242, 247, 0.94);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
@@ -140,12 +140,38 @@ body {
 .logo {
     display: flex;
     align-items: center;
+    gap: 10px;
     height: 44px;
 }
 
 .logo-icon {
-    height: 28px;
-    width: auto;
+    height: 32px;
+    width: 32px;
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo-title {
+    font-family: 'Outfit', 'Playfair Display', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--label-primary);
+    line-height: 1.1;
+}
+
+.logo-subtitle {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 0.5rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--label-secondary);
+    opacity: 0.55;
 }
 
 .header-stats {
@@ -254,12 +280,125 @@ body {
    Search Bar - iOS Style
    ============================ */
 
-.search-container {
-    margin-bottom: var(--space-16);
+/* ============================
+   Filter Bar (Sticky)
+   ============================ */
+
+.filter-bar {
+    position: sticky;
+    top: 44px;
+    z-index: 100;
+    background: var(--bg-primary);
+    padding: var(--space-12) 0 var(--space-16) 0;
+    margin-bottom: var(--space-8);
+    border-bottom: 1px solid var(--separator);
 }
 
-.search-container.hidden {
+.filter-bar.hidden {
     display: none;
+}
+
+.filter-controls {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    margin-top: var(--space-12);
+}
+
+.control-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-6);
+    height: 36px;
+    padding: 0 var(--space-16);
+    border: 1px solid var(--separator-opaque);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--label-primary);
+    font-size: var(--font-footnote);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.control-btn:hover {
+    background: var(--bg-tertiary);
+}
+
+.control-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.control-dropdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: var(--space-8);
+    background: var(--bg-secondary);
+    border: 1px solid var(--separator-opaque);
+    border-radius: var(--radius-12);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.control-dropdown.hidden {
+    display: none;
+}
+
+.filter-section {
+    padding: var(--space-8) 0;
+    border-bottom: 1px solid var(--separator);
+}
+
+.filter-section:last-child {
+    border-bottom: none;
+}
+
+.filter-section h4 {
+    font-size: var(--font-caption1);
+    font-weight: 600;
+    color: var(--label-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: var(--space-8) var(--space-16);
+    margin: 0;
+}
+
+.control-option {
+    width: 100%;
+    padding: var(--space-12) var(--space-16);
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-size: var(--font-body);
+    color: var(--label-primary);
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+.control-option:hover {
+    background: var(--bg-tertiary);
+}
+
+.control-option.active {
+    color: var(--wine-primary);
+    font-weight: 600;
+}
+
+.control-option.active::before {
+    content: '✓';
+    font-weight: 600;
 }
 
 .search-input-wrapper {
@@ -1446,7 +1585,7 @@ body {
 
 .detail-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: var(--space-12);
 }
 
@@ -1633,6 +1772,10 @@ body {
 @supports (padding: max(0px)) {
     .header {
         padding-top: env(safe-area-inset-top);
+    }
+
+    .filter-bar {
+        top: calc(44px + env(safe-area-inset-top));
     }
 
     .fab {
@@ -2163,8 +2306,8 @@ body {
 }
 
 .login-logo {
-    width: 240px;
-    height: auto;
+    width: 100px;
+    height: 100px;
     margin-bottom: var(--space-24);
 }
 
@@ -2418,42 +2561,7 @@ body {
    Sort Bar
    ============================ */
 
-.sort-bar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-8);
-    margin-bottom: var(--space-12);
-    padding: 0 var(--space-4);
-}
-
-.sort-bar.hidden {
-    display: none;
-}
-
-.sort-bar label {
-    font-size: var(--font-footnote);
-    color: var(--label-secondary);
-}
-
-.sort-select {
-    height: 32px;
-    padding: 0 var(--space-24) 0 var(--space-12);
-    border: 1px solid var(--separator-opaque);
-    border-radius: var(--radius-md);
-    font-size: var(--font-footnote);
-    font-family: var(--font-system);
-    color: var(--label-primary);
-    background: var(--bg-secondary);
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%233C3C43' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-}
-
-.sort-select:focus {
-    outline: none;
-    border-color: var(--wine-primary);
-}
+/* Old sort-bar styles removed - now using filter-bar */
 
 /* ============================
    Drink Window Form
@@ -2499,6 +2607,17 @@ body {
     flex-wrap: wrap;
     gap: var(--space-8);
     margin-top: var(--space-4);
+}
+
+.wine-quantity-badge {
+    font-size: var(--font-caption2);
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(114, 47, 55, 0.12);
+    color: var(--wine-primary);
+    display: inline-flex;
+    align-items: center;
 }
 
 .wine-price-tag {
@@ -2605,4 +2724,214 @@ body {
 .drink-status-badge.status-past {
     background: rgba(255, 59, 48, 0.1);
     color: var(--system-red);
+}
+
+/* Verify Button */
+.verify-btn {
+    background: var(--bg-tertiary);
+    border: none;
+    color: var(--label-primary);
+}
+
+.verify-btn:active {
+    opacity: 0.7;
+}
+
+/* Verify Modal */
+.verify-modal {
+    max-width: 600px;
+}
+
+.verify-header {
+    padding: var(--space-24) var(--space-24) var(--space-16);
+    border-bottom: 1px solid var(--separator);
+}
+
+.verify-header h2 {
+    margin: 0 0 var(--space-8) 0;
+    font-size: var(--font-title2);
+    font-weight: 600;
+    color: var(--label-primary);
+}
+
+.verify-subtitle {
+    margin: 0;
+    font-size: var(--font-subheadline);
+    color: var(--label-secondary);
+}
+
+.verify-body {
+    padding: var(--space-24);
+}
+
+.verify-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+}
+
+.verify-label {
+    display: block;
+    font-size: var(--font-footnote);
+    font-weight: 600;
+    color: var(--label-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: var(--space-8);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-12);
+}
+
+.verify-analyze-btn {
+    margin-top: var(--space-8);
+    width: 100%;
+    background: var(--wine-primary);
+    border: none;
+    color: white;
+}
+
+.verify-analyze-btn:active {
+    opacity: 0.8;
+}
+
+/* Verify Loading */
+.verify-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-48) var(--space-24);
+    text-align: center;
+}
+
+.verify-loading p {
+    margin-top: var(--space-20);
+    font-size: var(--font-body);
+    color: var(--label-secondary);
+}
+
+/* Verify Results */
+.verify-results {
+    animation: slideUp 0.3s ease-out;
+}
+
+.verify-results h3 {
+    margin: 0 0 var(--space-20) 0;
+    font-size: var(--font-title3);
+    font-weight: 600;
+    color: var(--wine-primary);
+}
+
+.verify-results-content {
+    background: var(--fill-quaternary);
+    border-radius: var(--radius-12);
+    padding: var(--space-16);
+    margin-bottom: var(--space-24);
+}
+
+.verify-result-photo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--space-16);
+    padding-bottom: var(--space-16);
+    border-bottom: 1px solid var(--separator);
+}
+
+.verify-result-photo img {
+    max-width: 200px;
+    max-height: 300px;
+    border-radius: var(--radius-12);
+    object-fit: contain;
+    background: white;
+}
+
+.verify-result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: var(--space-12) 0;
+    border-bottom: 1px solid var(--separator);
+}
+
+.verify-result-item:last-child {
+    border-bottom: none;
+}
+
+.verify-result-label {
+    font-size: var(--font-footnote);
+    font-weight: 600;
+    color: var(--label-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+    width: 100px;
+}
+
+.verify-result-value {
+    font-size: var(--font-body);
+    color: var(--label-primary);
+    font-weight: 500;
+    text-align: right;
+    flex: 1;
+}
+
+.verify-result-notes {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.verify-result-notes .verify-result-label {
+    margin-bottom: var(--space-8);
+}
+
+.verify-result-notes .verify-result-value {
+    text-align: left;
+    line-height: 1.5;
+}
+
+.verify-results-actions {
+    display: flex;
+    gap: var(--space-12);
+}
+
+.verify-results-actions .btn {
+    flex: 1;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .detail-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .verify-result-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .verify-result-label {
+        margin-bottom: var(--space-4);
+    }
+
+    .verify-result-value {
+        text-align: left;
+    }
 }

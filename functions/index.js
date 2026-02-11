@@ -336,6 +336,109 @@ exports.searchWineImage = functions.https.onRequest(async (req, res) => {
 });
 
 // ================================
+// Deep Wine Analysis - Search based on text input
+// ================================
+exports.deepAnalyzeWineLabel = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+        res.status(204).send('');
+        return;
+    }
+
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method not allowed' });
+        return;
+    }
+
+    const user = await verifyAuth(req, res);
+    if (!user) return;
+
+    const geminiKey = getGeminiKey();
+    if (!geminiKey) {
+        res.status(500).json({ error: 'Gemini API not configured' });
+        return;
+    }
+
+    try {
+        const { name, producer, year, grape, region } = req.body;
+
+        if (!name) {
+            res.status(400).json({ error: 'Wine name is required' });
+            return;
+        }
+
+        console.log('🔍 Wine search for:', name, producer, year, grape, region);
+
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-2.5-flash',
+            tools: [{ googleSearch: {} }]  // Enable web search grounding
+        });
+
+        const searchTerms = [name, producer, year, grape, region].filter(Boolean).join(' ');
+
+        const prompt = `Search for this wine and provide complete, accurate information: "${searchTerms}"
+
+Use web search to find:
+1. Correct wine name and producer
+2. Vintage year
+3. Grape variety/varieties
+4. Region and country
+5. Wine type (red/white/rosé/sparkling/dessert)
+6. Wine characteristics and tasting notes
+7. Optimal drinking window
+
+Return JSON with complete wine information:
+{
+    "name": "wine name (the official wine name only, without the producer name)",
+    "producer": "producer/house name (château, domaine, winery or estate name - never use legal entity names like Société Civile, S.A., M.L.P., SRL, GmbH etc.)",
+    "year": year as number or null,
+    "region": "region, country",
+    "grape": "grape variety/varieties",
+    "type": "red/white/rosé/sparkling/dessert",
+    "characteristics": {
+        "boldness": 1-5,
+        "tannins": 1-5,
+        "acidity": 1-5
+    },
+    "notes": "tasting notes or description",
+    "drinkFrom": year as number (estimated optimal drinking window start),
+    "drinkUntil": year as number (estimated optimal drinking window end)
+}
+
+If you cannot find the wine, return the best match you can find with the provided information.
+Only respond with JSON, no other text.`;
+
+        const result = await model.generateContent(prompt);
+        const content = result.response.text();
+        console.log('Wine search response:', content);
+
+        let wineData;
+        try {
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                wineData = JSON.parse(jsonMatch[0]);
+            } else {
+                wineData = JSON.parse(content);
+            }
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            res.status(500).json({ error: 'Failed to parse wine data', raw: content });
+            return;
+        }
+
+        res.json({ success: true, data: wineData });
+
+    } catch (error) {
+        console.error('Wine search error:', error);
+        res.status(500).json({ error: 'Search failed', message: error.message });
+    }
+});
+
+// ================================
 // Health check endpoint
 // ================================
 exports.health = functions.https.onRequest((req, res) => {

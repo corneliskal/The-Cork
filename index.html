@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="app">
@@ -15,7 +15,17 @@
         <header class="header">
             <div class="header-content">
                 <div class="logo">
-                    <img src="logo.png" alt="The Cork" class="logo-icon">
+                    <svg class="logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 8 C50 8 22 44 22 63 C22 78.5 34.5 91 50 91 C65.5 91 78 78.5 78 63 C78 44 50 8 50 8Z" fill="#722f37"/>
+                        <circle cx="50" cy="60" r="18" fill="#c9a96e"/>
+                        <circle cx="45" cy="56" r="2.2" fill="#a8854a" opacity="0.5"/>
+                        <circle cx="55" cy="59" r="1.8" fill="#a8854a" opacity="0.5"/>
+                        <circle cx="49" cy="65" r="2.0" fill="#a8854a" opacity="0.5"/>
+                    </svg>
+                    <div class="logo-text">
+                        <span class="logo-title">The Cork</span>
+                        <span class="logo-subtitle">Wine Inventory App</span>
+                    </div>
                 </div>
                 <button id="archiveBtn" class="header-icon-btn" aria-label="Archief">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -42,7 +52,18 @@
         <!-- Login Screen -->
         <div id="loginScreen" class="login-screen">
             <div class="login-content">
-                <img src="logo.png" alt="The Cork" class="login-logo">
+                <svg class="login-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 8 C50 8 22 44 22 63 C22 78.5 34.5 91 50 91 C65.5 91 78 78.5 78 63 C78 44 50 8 50 8Z" fill="#722f37"/>
+                    <circle cx="50" cy="60" r="18" fill="#c9a96e"/>
+                    <circle cx="44" cy="55" r="1.4" fill="#a8854a" opacity="0.6"/>
+                    <circle cx="53" cy="53" r="1.1" fill="#a8854a" opacity="0.5"/>
+                    <circle cx="47" cy="62" r="1.5" fill="#a8854a" opacity="0.6"/>
+                    <circle cx="56" cy="58" r="1.2" fill="#a8854a" opacity="0.5"/>
+                    <circle cx="43" cy="65" r="1.2" fill="#a8854a" opacity="0.5"/>
+                    <circle cx="54" cy="66" r="1.3" fill="#a8854a" opacity="0.6"/>
+                    <circle cx="50" cy="57" r="0.9" fill="#a8854a" opacity="0.4"/>
+                    <circle cx="58" cy="63" r="1.0" fill="#a8854a" opacity="0.45"/>
+                </svg>
                 <h1>Welkom bij The Cork</h1>
                 <p>Log in om je wijnkelder te beheren en te synchroniseren tussen al je apparaten.</p>
 
@@ -85,8 +106,9 @@
 
         <!-- Main Content -->
         <main class="main-content hidden">
-            <!-- Search Bar -->
-            <div id="searchContainer" class="search-container hidden">
+            <!-- Sticky Filter Bar -->
+            <div id="filterBar" class="filter-bar hidden">
+                <!-- Search -->
                 <div class="search-input-wrapper">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/>
@@ -100,26 +122,73 @@
                         </svg>
                     </button>
                 </div>
+
+                <!-- Filter and Sort Buttons -->
+                <div class="filter-controls">
+                    <button id="filterBtn" class="control-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                        </svg>
+                        <span>Filter</span>
+                    </button>
+                    <button id="sortBtn" class="control-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="6" y1="12" x2="18" y2="12"/>
+                            <line x1="9" y1="18" x2="15" y2="18"/>
+                        </svg>
+                        <span>Sorteer</span>
+                    </button>
+                </div>
+
+                <!-- Sort Dropdown -->
+                <div id="sortDropdown" class="control-dropdown hidden">
+                    <button class="control-option active" data-sort="recent">Recent toegevoegd</button>
+                    <button class="control-option" data-sort="drinkability">Op dronk</button>
+                    <button class="control-option" data-sort="price_asc">Prijs (laag → hoog)</button>
+                    <button class="control-option" data-sort="price_desc">Prijs (hoog → laag)</button>
+                </div>
+
+                <!-- Filter Dropdown -->
+                <div id="filterDropdown" class="control-dropdown hidden">
+                    <div class="filter-section">
+                        <h4>Type</h4>
+                        <button class="control-option active" data-filter="type" data-value="all">Alles</button>
+                        <button class="control-option" data-filter="type" data-value="red">Red</button>
+                        <button class="control-option" data-filter="type" data-value="white">White</button>
+                        <button class="control-option" data-filter="type" data-value="rosé">Rosé</button>
+                        <button class="control-option" data-filter="type" data-value="sparkling">Sparkling</button>
+                        <button class="control-option" data-filter="type" data-value="dessert">Dessert</button>
+                    </div>
+                    <div class="filter-section">
+                        <h4>Dronk status</h4>
+                        <button class="control-option" data-filter="drinkability" data-value="all">Alles</button>
+                        <button class="control-option" data-filter="drinkability" data-value="perfect">Op dronk</button>
+                        <button class="control-option" data-filter="drinkability" data-value="soon">Binnenkort</button>
+                    </div>
+                </div>
+
+                <!-- Search Results -->
                 <div id="searchResults" class="search-results hidden">
                     <span id="searchResultCount">0 results</span>
                 </div>
             </div>
 
-            <!-- Sort Bar -->
-            <div id="sortBar" class="sort-bar hidden">
-                <label for="sortSelect">Sorteer:</label>
-                <select id="sortSelect" class="sort-select">
-                    <option value="recent">Recent toegevoegd</option>
-                    <option value="drinkability">Op dronk</option>
-                    <option value="price_asc">Prijs (laag → hoog)</option>
-                    <option value="price_desc">Prijs (hoog → laag)</option>
-                </select>
-            </div>
-
             <!-- Empty State -->
             <div id="emptyState" class="empty-state">
                 <div class="empty-illustration">
-                    <img src="logo.png" alt="The Cork" class="empty-logo">
+                    <svg class="empty-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 8 C50 8 22 44 22 63 C22 78.5 34.5 91 50 91 C65.5 91 78 78.5 78 63 C78 44 50 8 50 8Z" fill="#722f37"/>
+                        <circle cx="50" cy="60" r="18" fill="#c9a96e"/>
+                        <circle cx="44" cy="55" r="1.4" fill="#a8854a" opacity="0.6"/>
+                        <circle cx="53" cy="53" r="1.1" fill="#a8854a" opacity="0.5"/>
+                        <circle cx="47" cy="62" r="1.5" fill="#a8854a" opacity="0.6"/>
+                        <circle cx="56" cy="58" r="1.2" fill="#a8854a" opacity="0.5"/>
+                        <circle cx="43" cy="65" r="1.2" fill="#a8854a" opacity="0.5"/>
+                        <circle cx="54" cy="66" r="1.3" fill="#a8854a" opacity="0.6"/>
+                        <circle cx="50" cy="57" r="0.9" fill="#a8854a" opacity="0.4"/>
+                        <circle cx="58" cy="63" r="1.0" fill="#a8854a" opacity="0.45"/>
+                    </svg>
                 </div>
                 <h2>Your cellar is empty</h2>
                 <p>Tap + to add your first bottle</p>
@@ -471,6 +540,9 @@
                     </div>
 
                     <div class="detail-actions">
+                        <button id="verifyWineBtn" class="action-btn verify-btn">
+                            🔄 Niet juist?
+                        </button>
                         <button id="editWineBtn" class="action-btn edit-btn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -738,6 +810,79 @@
             </div>
         </div>
 
+        <!-- Verification Modal -->
+        <div id="verifyModal" class="modal">
+            <div class="modal-content detail-modal verify-modal">
+                <button class="close-btn detail-close" id="verifyModalCloseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+
+                <div class="verify-header">
+                    <h2>🔄 Wijn controleren</h2>
+                    <p class="verify-subtitle">Pas de gegevens aan en klik op 'Analyseer opnieuw'</p>
+                </div>
+
+                <div class="verify-body">
+                    <div class="verify-form" id="verifyFormSection">
+                        <div class="form-group">
+                            <label class="verify-label">Wijn Naam</label>
+                            <input type="text" id="verifyName" class="form-input" placeholder="Naam van de wijn">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="verify-label">Producent</label>
+                            <input type="text" id="verifyProducer" class="form-input" placeholder="Château, Domaine, etc.">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="verify-label">Jaartal</label>
+                                <input type="number" id="verifyYear" class="form-input" placeholder="2020" min="1900" max="2099">
+                            </div>
+                            <div class="form-group">
+                                <label class="verify-label">Druif</label>
+                                <input type="text" id="verifyGrape" class="form-input" placeholder="Cabernet Sauvignon">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="verify-label">Regio</label>
+                            <input type="text" id="verifyRegion" class="form-input" placeholder="Regio, Land">
+                        </div>
+
+                        <button class="action-btn verify-analyze-btn" id="reanalyzeBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 6v6l4 2"></path>
+                            </svg>
+                            Analyseer opnieuw
+                        </button>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div class="verify-loading hidden" id="verifyLoading">
+                        <div class="scanning-animation">
+                            <div class="scan-line"></div>
+                        </div>
+                        <p>Zoeken naar wijn informatie...</p>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div class="verify-results hidden" id="verifyResults">
+                        <h3>✨ Gevonden informatie</h3>
+                        <div class="verify-results-content" id="verifyResultsContent"></div>
+                        <div class="verify-results-actions">
+                            <button class="btn btn-secondary" id="verifyResultsCancelBtn">Annuleren</button>
+                            <button class="btn btn-primary" id="verifyResultsApplyBtn">✓ Gebruik deze informatie</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Toast Notification -->
         <div id="toast" class="toast">
             <span id="toastMessage"></span>
@@ -749,7 +894,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-    <script src="config.js?v=10"></script>
-    <script src="app.js?v=10"></script>
+    <script src="config.js?v=25"></script>
+    <script src="app.js?v=25"></script>
 </body>
 </html>
