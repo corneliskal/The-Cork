@@ -1872,13 +1872,54 @@ class WineCellar {
 
         this.currentWineId = wineId;
 
-        const detailImage = document.getElementById('detailImage');
+        // Hero content: product photo or vineyard landscape fallback
+        const heroContent = document.getElementById('detailHeroContent');
         if (wine.image) {
-            detailImage.innerHTML = `<img src="${wine.image}" alt="${wine.name}"><div class="wine-type-badge">${wine.type}</div>`;
+            heroContent.innerHTML = `<img src="${wine.image}" alt="${wine.name}">`;
         } else {
-            detailImage.innerHTML = `<div class="placeholder-bg ${wine.type}"><span style="font-size: 3rem;">🍷</span></div><div class="wine-type-badge">${wine.type}</div>`;
+            heroContent.innerHTML = `
+                <svg class="vineyard-landscape" viewBox="0 0 375 380" preserveAspectRatio="xMidYMax slice">
+                    <defs>
+                        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#c8dbb8"/><stop offset="60%" stop-color="#e4d49e"/><stop offset="100%" stop-color="#dbb978"/>
+                        </linearGradient>
+                        <linearGradient id="hill1" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#8fb36a"/><stop offset="100%" stop-color="#6a9148"/>
+                        </linearGradient>
+                        <linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#a4c47a"/><stop offset="100%" stop-color="#7da858"/>
+                        </linearGradient>
+                        <linearGradient id="hill3" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#b8d48e"/><stop offset="100%" stop-color="#94b86a"/>
+                        </linearGradient>
+                    </defs>
+                    <rect fill="url(#sky)" width="375" height="380"/>
+                    <ellipse fill="url(#hill1)" cx="100" cy="240" rx="200" ry="60" opacity="0.6"/>
+                    <ellipse fill="url(#hill1)" cx="320" cy="250" rx="160" ry="50" opacity="0.5"/>
+                    <ellipse fill="url(#hill2)" cx="60" cy="290" rx="180" ry="55"/>
+                    <ellipse fill="url(#hill2)" cx="340" cy="280" rx="140" ry="50"/>
+                    <g stroke="#7da858" stroke-width="1" opacity="0.4">
+                        <path d="M-20,270 Q60,252 140,270" fill="none"/><path d="M-20,278 Q60,260 140,278" fill="none"/>
+                        <path d="M-20,286 Q60,268 140,286" fill="none"/><path d="M240,265 Q320,248 400,265" fill="none"/>
+                    </g>
+                    <path fill="url(#hill3)" d="M-20,310 Q80,270 187,295 Q300,320 400,290 L400,380 L-20,380 Z"/>
+                    <g stroke="#88a862" stroke-width="1.2" opacity="0.35">
+                        <path d="M-20,315 Q80,280 187,300 Q300,322 400,295" fill="none"/>
+                        <path d="M-20,325 Q80,290 187,310 Q300,332 400,305" fill="none"/>
+                        <path d="M-20,335 Q80,300 187,320 Q300,342 400,315" fill="none"/>
+                    </g>
+                    <g opacity="0.7">
+                        <path d="M50,260 Q52,230 54,260 Z" fill="#5a7d3a"/><path d="M48,265 Q52,225 56,265 Z" fill="#4a6d2a"/>
+                        <path d="M310,250 Q312,225 314,250 Z" fill="#5a7d3a"/><path d="M308,255 Q312,220 316,255 Z" fill="#4a6d2a"/>
+                        <rect x="154" y="248" width="18" height="14" fill="#e8d5a3" rx="1"/>
+                        <path d="M152,248 L163,240 L174,248 Z" fill="#c45a3c"/>
+                    </g>
+                    <ellipse cx="187" cy="365" rx="30" ry="6" fill="rgba(60,30,10,0.12)"/>
+                </svg>`;
         }
 
+        // Hero info overlay
+        document.getElementById('detailTypeBadge').textContent = wine.type;
         document.getElementById('detailName').textContent = wine.name;
 
         const producerEl = document.getElementById('detailProducer');
@@ -1889,11 +1930,14 @@ class WineCellar {
             producerEl.style.display = 'none';
         }
 
-        document.getElementById('detailRegion').textContent = wine.region || 'Region not specified';
+        document.getElementById('detailRegion').textContent = wine.region || '';
+
+        // Facts row
         document.getElementById('detailYear').textContent = wine.year || '—';
         document.getElementById('detailGrape').textContent = wine.grape || '—';
         document.getElementById('detailPrice').textContent = wine.price ? `€${wine.price.toFixed(2)}` : '—';
 
+        // Profile bars
         document.getElementById('detailBoldness').style.width = `${wine.boldness * 20}%`;
         document.getElementById('detailTannins').style.width = `${wine.tannins * 20}%`;
         document.getElementById('detailAcidity').style.width = `${wine.acidity * 20}%`;
@@ -1902,14 +1946,14 @@ class WineCellar {
         const drinkWindowSection = document.getElementById('detailDrinkWindowSection');
         const drinkWindowDisplay = this.getDrinkWindowDisplay(wine);
         if (drinkWindowDisplay) {
-            drinkWindowSection.style.display = 'block';
+            drinkWindowSection.style.display = 'flex';
             document.getElementById('detailDrinkWindow').textContent = drinkWindowDisplay;
 
             const drinkStatus = this.getDrinkStatus(wine);
             const statusBadge = document.getElementById('detailDrinkStatus');
             if (drinkStatus.label) {
                 statusBadge.textContent = drinkStatus.label;
-                statusBadge.className = `drink-status-badge ${drinkStatus.class}`;
+                statusBadge.className = `detail-drink-badge ${drinkStatus.class}`;
                 statusBadge.style.display = 'inline-block';
             } else {
                 statusBadge.style.display = 'none';
@@ -1918,6 +1962,7 @@ class WineCellar {
             drinkWindowSection.style.display = 'none';
         }
 
+        // Store
         const storeSection = document.getElementById('detailStoreSection');
         const storeText = document.getElementById('detailStore');
         if (wine.store) {
@@ -1927,6 +1972,7 @@ class WineCellar {
             storeSection.style.display = 'none';
         }
 
+        // Notes
         const notesSection = document.getElementById('detailNotesSection');
         const notesText = document.getElementById('detailNotes');
         if (wine.notes) {
@@ -1936,6 +1982,7 @@ class WineCellar {
             notesSection.style.display = 'none';
         }
 
+        // Quantity
         document.getElementById('detailQuantity').textContent = wine.quantity;
         this.openModal('detailModal');
     }

@@ -4,10 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Cork - Wine Cellar</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="The Cork">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="stylesheet" href="styles.css?v=33">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="app">
@@ -24,7 +30,7 @@
                     </svg>
                     <div class="logo-text">
                         <span class="logo-title">The Cork</span>
-                        <span class="logo-subtitle">Wine Inventory App</span>
+                        <span class="logo-subtitle">Wine Inventory</span>
                     </div>
                 </div>
                 <button id="archiveBtn" class="header-icon-btn" aria-label="Archief">
@@ -456,43 +462,41 @@
                     </svg>
                 </button>
 
-                <div class="detail-header">
-                    <div id="detailImage" class="detail-image">
-                        <div class="wine-type-badge" id="detailTypeBadge">Red</div>
+                <!-- Hero Section -->
+                <div id="detailHero" class="detail-hero">
+                    <div id="detailHeroContent" class="detail-hero-content"></div>
+                    <div class="detail-hero-info">
+                        <span id="detailTypeBadge" class="detail-type-badge">Red</span>
+                        <div id="detailName" class="detail-wine-name">Wine Name</div>
+                        <div id="detailProducer" class="detail-wine-producer">Producer</div>
+                        <div id="detailRegion" class="detail-wine-region">Region, Country</div>
                     </div>
                 </div>
 
-                <div class="detail-body">
-                    <div class="detail-title-section">
-                        <h2 id="detailName">Wine Name</h2>
-                        <p id="detailProducer" class="detail-producer">Producer</p>
-                        <p id="detailRegion" class="detail-region">Region, Country</p>
-                    </div>
-
-                    <div class="detail-meta">
-                        <div class="meta-item">
-                            <span class="meta-label">Jaar</span>
-                            <span id="detailYear" class="meta-value">2020</span>
+                <!-- Content -->
+                <div class="detail-content">
+                    <div class="detail-facts-row">
+                        <div class="detail-fact">
+                            <div class="detail-fact-label">Year</div>
+                            <div id="detailYear" class="detail-fact-value">2020</div>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Druif</span>
-                            <span id="detailGrape" class="meta-value">Cabernet</span>
+                        <div class="detail-fact">
+                            <div class="detail-fact-label">Grape</div>
+                            <div id="detailGrape" class="detail-fact-value">Cabernet</div>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Prijs</span>
-                            <span id="detailPrice" class="meta-value">€25</span>
+                        <div class="detail-fact">
+                            <div class="detail-fact-label">Price</div>
+                            <div id="detailPrice" class="detail-fact-value">€25</div>
                         </div>
                     </div>
 
                     <div id="detailDrinkWindowSection" class="detail-drink-window">
-                        <div class="drink-window-header">
-                            <span class="drink-window-icon">🍷</span>
-                            <span class="drink-window-label">Beste Drinkmoment</span>
+                        <div class="detail-drink-icon">🍷</div>
+                        <div class="detail-drink-text">
+                            <div class="detail-drink-label">Best drinking</div>
+                            <div id="detailDrinkWindow" class="detail-drink-range">2025 — 2030</div>
                         </div>
-                        <div class="drink-window-content">
-                            <span id="detailDrinkWindow" class="drink-window-years">2025 — 2035</span>
-                            <span id="detailDrinkStatus" class="drink-status-badge">Nu perfect</span>
-                        </div>
+                        <span id="detailDrinkStatus" class="detail-drink-badge">Now perfect</span>
                     </div>
 
                     <div id="detailStoreSection" class="detail-store">
@@ -500,63 +504,41 @@
                         <span id="detailStore">Winkel</span>
                     </div>
 
-                    <div class="detail-characteristics">
-                        <h3>Profile</h3>
-                        <div class="char-bars">
-                            <div class="char-bar-item">
-                                <span class="char-label">Boldness</span>
-                                <div class="char-bar">
-                                    <div id="detailBoldness" class="char-fill" style="width: 60%"></div>
-                                </div>
-                            </div>
-                            <div class="char-bar-item">
-                                <span class="char-label">Tannins</span>
-                                <div class="char-bar">
-                                    <div id="detailTannins" class="char-fill" style="width: 60%"></div>
-                                </div>
-                            </div>
-                            <div class="char-bar-item">
-                                <span class="char-label">Acidity</span>
-                                <div class="char-bar">
-                                    <div id="detailAcidity" class="char-fill" style="width: 60%"></div>
-                                </div>
-                            </div>
+                    <div class="detail-profile-section">
+                        <div class="detail-profile-title">Profile</div>
+                        <div class="detail-profile-bar">
+                            <span class="detail-bar-label">Boldness</span>
+                            <div class="detail-bar-track"><div id="detailBoldness" class="detail-bar-fill boldness"></div></div>
+                        </div>
+                        <div class="detail-profile-bar">
+                            <span class="detail-bar-label">Tannins</span>
+                            <div class="detail-bar-track"><div id="detailTannins" class="detail-bar-fill tannins"></div></div>
+                        </div>
+                        <div class="detail-profile-bar">
+                            <span class="detail-bar-label">Acidity</span>
+                            <div class="detail-bar-track"><div id="detailAcidity" class="detail-bar-fill acidity"></div></div>
                         </div>
                     </div>
 
-                    <div id="detailNotesSection" class="detail-notes">
-                        <h3>Notes</h3>
-                        <p id="detailNotes"></p>
+                    <div id="detailNotesSection" class="detail-notes-section">
+                        <div class="detail-notes-label">Notes</div>
+                        <div id="detailNotes" class="detail-notes-text"></div>
                     </div>
 
-                    <div class="detail-quantity-section">
-                        <h3>In Cellar</h3>
-                        <div class="detail-quantity-control">
-                            <button class="qty-btn large" id="detailDecrease">−</button>
-                            <span id="detailQuantity" class="detail-qty-value">1</span>
-                            <button class="qty-btn large" id="detailIncrease">+</button>
+                    <div class="detail-cellar-label">In Cellar</div>
+                    <div class="detail-cellar-section">
+                        <button class="detail-cellar-btn" id="detailDecrease">−</button>
+                        <div>
+                            <div id="detailQuantity" class="detail-cellar-count">1</div>
+                            <div class="detail-cellar-unit">bottles</div>
                         </div>
-                        <span class="bottles-label">bottles</span>
+                        <button class="detail-cellar-btn" id="detailIncrease">+</button>
                     </div>
 
                     <div class="detail-actions">
-                        <button id="verifyWineBtn" class="action-btn verify-btn">
-                            🔄 Niet juist?
-                        </button>
-                        <button id="editWineBtn" class="action-btn edit-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                            Edit
-                        </button>
-                        <button id="deleteWineBtn" class="action-btn delete-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="3 6 5 6 21 6"/>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            </svg>
-                            Delete
-                        </button>
+                        <button id="verifyWineBtn" class="detail-action-btn detail-btn-report">Niet juist?</button>
+                        <button id="editWineBtn" class="detail-action-btn detail-btn-edit">Edit</button>
+                        <button id="deleteWineBtn" class="detail-action-btn detail-btn-delete">Delete</button>
                     </div>
                 </div>
             </div>
@@ -894,7 +876,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-    <script src="config.js?v=25"></script>
-    <script src="app.js?v=25"></script>
+    <script src="config.js?v=33"></script>
+    <script src="app.js?v=33"></script>
 </body>
 </html>
