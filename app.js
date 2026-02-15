@@ -740,8 +740,10 @@ class WineCellar {
             e.stopPropagation();
             const filterDropdown = document.getElementById('filterDropdown');
             const sortDropdown = document.getElementById('sortDropdown');
-            sortDropdown?.classList.add('hidden'); // Close sort if open
+            sortDropdown?.classList.add('hidden');
+            document.getElementById('sortBtn')?.classList.remove('active');
             filterDropdown?.classList.toggle('hidden');
+            e.currentTarget.classList.toggle('active');
         });
 
         // Sort button and dropdown
@@ -749,8 +751,10 @@ class WineCellar {
             e.stopPropagation();
             const sortDropdown = document.getElementById('sortDropdown');
             const filterDropdown = document.getElementById('filterDropdown');
-            filterDropdown?.classList.add('hidden'); // Close filter if open
+            filterDropdown?.classList.add('hidden');
+            document.getElementById('filterBtn')?.classList.remove('active');
             sortDropdown?.classList.toggle('hidden');
+            e.currentTarget.classList.toggle('active');
         });
 
         // Sort options
@@ -765,6 +769,7 @@ class WineCellar {
 
                 // Close dropdown and re-render
                 document.getElementById('sortDropdown')?.classList.add('hidden');
+                document.getElementById('sortBtn')?.classList.remove('active');
                 this.sortAndRenderWines();
             });
         });
@@ -802,11 +807,13 @@ class WineCellar {
             if (sortDropdown && !sortDropdown.classList.contains('hidden') &&
                 !sortDropdown.contains(e.target) && !sortBtn?.contains(e.target)) {
                 sortDropdown.classList.add('hidden');
+                sortBtn?.classList.remove('active');
             }
 
             if (filterDropdown && !filterDropdown.classList.contains('hidden') &&
                 !filterDropdown.contains(e.target) && !filterBtn?.contains(e.target)) {
                 filterDropdown.classList.add('hidden');
+                filterBtn?.classList.remove('active');
             }
         });
 
