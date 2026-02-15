@@ -367,7 +367,7 @@ exports.searchWineImage = functions.https.onRequest(async (req, res) => {
             return;
         }
 
-        const query = [name, producer, year, type, 'wine bottle png'].filter(Boolean).join(' ');
+        const query = [name, producer, type, 'wine bottle png'].filter(Boolean).join(' ');
         console.log('🖼️ Serper image search for:', query);
 
         const response = await fetch('https://google.serper.dev/images', {
