@@ -226,8 +226,9 @@ class WineCellar {
 
         // Sort and filter state
         this.sortBy = 'recent'; // 'recent', 'drinkability', 'price_asc', 'price_desc'
-        this.typeFilter = 'all'; // 'all', 'red', 'white', 'rosé', 'sparkling', 'dessert'
-        this.drinkabilityFilter = 'all'; // 'all', 'perfect', 'soon'
+        this.typeFilter = 'all';
+        this.drinkabilityFilter = 'all';
+        this.grapeFilter = 'all';
 
         // Firebase
         this.db = null;
@@ -774,27 +775,29 @@ class WineCellar {
             });
         });
 
-        // Filter options
-        document.querySelectorAll('#filterDropdown .control-option').forEach(option => {
-            option.addEventListener('click', (e) => {
-                const filterType = e.currentTarget.dataset.filter;
-                const filterValue = e.currentTarget.dataset.value;
+        // Filter options (event delegation for dynamic grape options)
+        document.getElementById('filterDropdown')?.addEventListener('click', (e) => {
+            const option = e.target.closest('.control-option');
+            if (!option) return;
 
-                if (filterType === 'type') {
-                    this.typeFilter = filterValue;
-                    // Update active state for type section
-                    document.querySelectorAll('[data-filter="type"]').forEach(opt => opt.classList.remove('active'));
-                } else if (filterType === 'drinkability') {
-                    this.drinkabilityFilter = filterValue;
-                    // Update active state for drinkability section
-                    document.querySelectorAll('[data-filter="drinkability"]').forEach(opt => opt.classList.remove('active'));
-                }
+            const filterType = option.dataset.filter;
+            const filterValue = option.dataset.value;
 
-                e.currentTarget.classList.add('active');
+            if (filterType === 'type') {
+                this.typeFilter = filterValue;
+                document.querySelectorAll('[data-filter="type"]').forEach(opt => opt.classList.remove('active'));
+            } else if (filterType === 'drinkability') {
+                this.drinkabilityFilter = filterValue;
+                document.querySelectorAll('[data-filter="drinkability"]').forEach(opt => opt.classList.remove('active'));
+            } else if (filterType === 'grape') {
+                this.grapeFilter = filterValue;
+                document.querySelectorAll('[data-filter="grape"]').forEach(opt => opt.classList.remove('active'));
+            }
 
-                // Re-render with filters
-                this.renderWineList();
-            });
+            option.classList.add('active');
+
+            // Re-render with filters
+            this.renderWineList();
         });
 
         // Close dropdowns when clicking outside
@@ -1712,6 +1715,42 @@ class WineCellar {
         } else {
             filterBar?.classList.add('hidden');
         }
+        this.updateGrapeFilterOptions();
+    }
+
+    updateGrapeFilterOptions() {
+        const section = document.getElementById('grapeFilterSection');
+        if (!section) return;
+
+        // Collect unique grapes from wines
+        const grapes = new Map();
+        this.wines.forEach(wine => {
+            if (wine.grape) {
+                // Take first grape if comma-separated
+                const primary = wine.grape.split(',')[0].trim();
+                const key = primary.toLowerCase();
+                if (!grapes.has(key)) grapes.set(key, primary);
+            }
+        });
+
+        // Sort alphabetically
+        const sorted = [...grapes.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+
+        if (sorted.length === 0) {
+            section.classList.add('hidden');
+            return;
+        }
+
+        section.classList.remove('hidden');
+        const buttonsHtml = sorted.map(([key, label]) =>
+            `<button class="control-option${this.grapeFilter === key ? ' active' : ''}" data-filter="grape" data-value="${key}">${label}</button>`
+        ).join('');
+
+        section.innerHTML = `
+            <h4>Druif</h4>
+            <button class="control-option${this.grapeFilter === 'all' ? ' active' : ''}" data-filter="grape" data-value="all">Alles</button>
+            ${buttonsHtml}
+        `;
     }
 
     sortAndRenderWines() {
@@ -1821,6 +1860,14 @@ class WineCellar {
             winesToShow = winesToShow.filter(wine => {
                 const status = this.getDrinkStatus(wine);
                 return status.status === this.drinkabilityFilter;
+            });
+        }
+
+        // Apply grape filter
+        if (this.grapeFilter !== 'all') {
+            winesToShow = winesToShow.filter(wine => {
+                const grape = (wine.grape || '').toLowerCase();
+                return grape.includes(this.grapeFilter.toLowerCase());
             });
         }
 
