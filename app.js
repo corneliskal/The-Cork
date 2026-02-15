@@ -1885,9 +1885,8 @@ class WineCellar {
                                 <span class="wine-type-tag ${wine.type}">${wine.type}</span>
                                 ${wine.quantity > 1 ? `<span class="wine-quantity-badge">${wine.quantity}x</span>` : ''}
                                 ${wine.price ? `<span class="wine-price-tag">€${wine.price}</span>` : ''}
-                                ${!wine.year ? '<span class="wine-year-missing-tag">+ jaartal</span>' : ''}
                                 ${isProcessing ? '<span class="wine-enriching-tag"><span class="enriching-spinner"></span>verrijken...</span>' : ''}
-                                ${drinkStatus.label ? `<span class="wine-drink-status ${drinkStatus.class}">${drinkStatus.label}</span>` : ''}
+                                ${!wine.year ? '<span class="wine-year-missing-tag">+ jaartal</span>' : (drinkStatus.label ? `<span class="wine-drink-status ${drinkStatus.class}">${drinkStatus.label}</span>` : '')}
                             </div>
                         </div>
                     </div>
@@ -1915,8 +1914,11 @@ class WineCellar {
                                 const drinkWindow = this.estimateDrinkWindow(wine);
                                 wine.drinkFrom = drinkWindow.from;
                                 wine.drinkUntil = drinkWindow.until;
+                                const enrichId = 'enrich_' + Date.now();
+                                wine.enrichId = enrichId;
                                 await this.saveWines();
                                 this.renderWineList();
+                                this.enrichWineInBackground(enrichId, wine);
                             }
                         }
 
