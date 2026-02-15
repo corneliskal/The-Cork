@@ -21,6 +21,7 @@ const CONFIG = {
     // Cloud Functions URLs
     // ============================
     FUNCTIONS: {
+        quickAnalyzeWineLabel: "https://us-central1-the-cork-claude.cloudfunctions.net/quickAnalyzeWineLabel",
         analyzeWineLabel: "https://us-central1-the-cork-claude.cloudfunctions.net/analyzeWineLabel",
         lookupWinePrice: "https://us-central1-the-cork-claude.cloudfunctions.net/lookupWinePrice",
         searchWineImage: "https://us-central1-the-cork-claude.cloudfunctions.net/searchWineImage",

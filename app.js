@@ -1166,9 +1166,15 @@ class WineCellar {
     async enrichWineInBackground(enrichId, wineData) {
         console.log('🔄 Background enrichment started for:', wineData.name);
 
-        // Track welke wijn we verrijken
-        this.backgroundProcessing.set(enrichId, { price: true, image: true });
+        // Track welke wijn we verrijken (3 parallel tasks)
+        this.backgroundProcessing.set(enrichId, { details: true, price: true, image: true });
         this.renderWineList(); // Toon spinner als wijn al opgeslagen is
+
+        // Deep analysis: characteristics, notes, drink window via Gemini + Search
+        const detailsPromise = wineData.name ? this.deepAnalyzeWine(wineData).catch(e => {
+            console.log('Background deep analysis failed:', e);
+            return null;
+        }) : Promise.resolve(null);
 
         // Prijs en foto parallel ophalen
         const pricePromise = wineData.name ? this.lookupWinePrice(wineData).catch(e => {
@@ -1180,6 +1186,30 @@ class WineCellar {
             console.log('Background image search failed:', e);
             return null;
         }) : Promise.resolve(null);
+
+        // Deep analysis verwerken wanneer klaar
+        detailsPromise.then(deepData => {
+            const proc = this.backgroundProcessing.get(enrichId);
+            if (proc) proc.details = false;
+
+            if (deepData) {
+                const updates = {};
+                if (deepData.characteristics) {
+                    if (deepData.characteristics.boldness) updates.boldness = deepData.characteristics.boldness;
+                    if (deepData.characteristics.tannins) updates.tannins = deepData.characteristics.tannins;
+                    if (deepData.characteristics.acidity) updates.acidity = deepData.characteristics.acidity;
+                }
+                if (deepData.notes) updates.notes = deepData.notes;
+                if (deepData.drinkFrom) updates.drinkFrom = deepData.drinkFrom;
+                if (deepData.drinkUntil) updates.drinkUntil = deepData.drinkUntil;
+
+                if (Object.keys(updates).length > 0) {
+                    console.log('📝 Deep analysis klaar (achtergrond):', Object.keys(updates).join(', '));
+                    this.updateSavedWine(enrichId, updates);
+                }
+            }
+            this.checkEnrichmentDone(enrichId);
+        });
 
         // Prijs verwerken wanneer klaar
         pricePromise.then(priceData => {
@@ -1219,7 +1249,7 @@ class WineCellar {
 
     checkEnrichmentDone(enrichId) {
         const proc = this.backgroundProcessing.get(enrichId);
-        if (proc && !proc.price && !proc.image) {
+        if (proc && !proc.details && !proc.price && !proc.image) {
             this.backgroundProcessing.delete(enrichId);
             this.renderWineList(); // Verwijder spinner
         }
@@ -1314,6 +1344,33 @@ class WineCellar {
             console.error('Image search error:', error);
             return null;
         }
+    }
+
+    async deepAnalyzeWine(wineData) {
+        if (!CONFIG.FUNCTIONS?.deepAnalyzeWineLabel) return null;
+
+        const idToken = await this.getIdToken();
+        if (!idToken) return null;
+
+        const response = await fetch(CONFIG.FUNCTIONS.deepAnalyzeWineLabel, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify({
+                name: wineData.name,
+                producer: wineData.producer,
+                year: wineData.year,
+                grape: wineData.grape,
+                region: wineData.region
+            })
+        });
+
+        if (!response.ok) return null;
+
+        const result = await response.json();
+        return result.success ? result.data : null;
     }
 
     matchExistingWine(wineData) {
@@ -1469,8 +1526,9 @@ class WineCellar {
     }
 
     async callChatGPTVision(imageData) {
-        // Use Cloud Function for API call (keys are stored securely on server)
-        if (!CONFIG.FUNCTIONS?.analyzeWineLabel) {
+        // Use quick scan endpoint for fast label recognition (6 fields only)
+        const endpoint = CONFIG.FUNCTIONS?.quickAnalyzeWineLabel || CONFIG.FUNCTIONS?.analyzeWineLabel;
+        if (!endpoint) {
             throw new Error('Cloud Functions not configured');
         }
 
@@ -1479,7 +1537,7 @@ class WineCellar {
             throw new Error('Not authenticated');
         }
 
-        const response = await fetch(CONFIG.FUNCTIONS.analyzeWineLabel, {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

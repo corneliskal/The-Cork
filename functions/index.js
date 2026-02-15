@@ -154,6 +154,101 @@ Only respond with the JSON, no other text.`;
 });
 
 // ================================
+// Quick Wine Label Scan - Fast extraction of basic label info
+// ================================
+exports.quickAnalyzeWineLabel = functions.https.onRequest(async (req, res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+        res.status(204).send('');
+        return;
+    }
+
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method not allowed' });
+        return;
+    }
+
+    const user = await verifyAuth(req, res);
+    if (!user) return;
+
+    const geminiKey = getGeminiKey();
+    if (!geminiKey) {
+        res.status(500).json({ error: 'Gemini API not configured' });
+        return;
+    }
+
+    try {
+        const { imageBase64 } = req.body;
+
+        if (!imageBase64) {
+            res.status(400).json({ error: 'No image provided' });
+            return;
+        }
+
+        // Extract base64 data (remove data URL prefix if present)
+        let base64Data = imageBase64;
+        let mimeType = 'image/jpeg';
+        if (imageBase64.startsWith('data:')) {
+            const matches = imageBase64.match(/^data:([^;]+);base64,(.+)$/);
+            if (matches) {
+                mimeType = matches[1];
+                base64Data = matches[2];
+            }
+        }
+
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
+
+        const prompt = `Read this wine label and extract ONLY these 6 fields as JSON:
+{
+    "name": "wine name (without producer)",
+    "producer": "producer/house name",
+    "year": year as number or null,
+    "region": "region, country",
+    "grape": "grape variety",
+    "type": "red/white/rosé/sparkling/dessert"
+}
+Naming: "Château Pétrus" → name: "Pétrus", producer: "Château Pétrus". Only JSON, no other text.`;
+
+        const result = await model.generateContent([
+            prompt,
+            {
+                inlineData: {
+                    mimeType: mimeType,
+                    data: base64Data
+                }
+            }
+        ]);
+
+        const content = result.response.text();
+        console.log('Quick scan response:', content);
+
+        let wineData;
+        try {
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                wineData = JSON.parse(jsonMatch[0]);
+            } else {
+                wineData = JSON.parse(content);
+            }
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            res.status(500).json({ error: 'Failed to parse response', raw: content });
+            return;
+        }
+
+        res.json({ success: true, data: wineData });
+
+    } catch (error) {
+        console.error('Quick scan error:', error);
+        res.status(500).json({ error: 'Failed to analyze image', message: error.message });
+    }
+});
+
+// ================================
 // Gemini Price Lookup - Get wine price using Google Search grounding
 // ================================
 exports.lookupWinePrice = functions.https.onRequest((req, res) => {
@@ -272,7 +367,7 @@ exports.searchWineImage = functions.https.onRequest(async (req, res) => {
             return;
         }
 
-        const query = [name, producer, year, 'wine bottle png'].filter(Boolean).join(' ');
+        const query = [name, producer, year, type, 'wine bottle png'].filter(Boolean).join(' ');
         console.log('🖼️ Serper image search for:', query);
 
         const response = await fetch('https://google.serper.dev/images', {
