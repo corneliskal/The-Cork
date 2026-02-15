@@ -217,8 +217,6 @@ class WineCellar {
         this.currentImage = null;
         this.searchQuery = '';
         this.archiveSearchQuery = '';
-        this.verifyNewData = null;
-
         // Archive modal state
         this.archiveRating = 0;
         this.archiveRebuy = null;
@@ -879,15 +877,8 @@ class WineCellar {
         document.getElementById('detailDecrease')?.addEventListener('click', () => this.updateDetailQuantity(-1));
 
         // Detail modal actions
-        document.getElementById('verifyWineBtn')?.addEventListener('click', () => this.openVerifyModal());
         document.getElementById('editWineBtn')?.addEventListener('click', () => this.editCurrentWine());
         document.getElementById('deleteWineBtn')?.addEventListener('click', () => this.openDeleteModal());
-
-        // Verify modal
-        document.getElementById('verifyModalCloseBtn')?.addEventListener('click', () => this.closeModal('verifyModal'));
-        document.getElementById('reanalyzeBtn')?.addEventListener('click', () => this.reanalyzeWine());
-        document.getElementById('verifyResultsCancelBtn')?.addEventListener('click', () => this.closeVerifyResults());
-        document.getElementById('verifyResultsApplyBtn')?.addEventListener('click', () => this.applyVerifyResults());
 
         // Google Sign-In / Sign-Out buttons
         document.getElementById('googleSignInBtn')?.addEventListener('click', () => this.signInWithGoogle());
@@ -1648,17 +1639,29 @@ class WineCellar {
 
         if (this.editMode) {
             const index = this.wines.findIndex(w => w.id === this.currentWineId);
-            if (index !== -1) this.wines[index] = wineData;
+            if (index !== -1) {
+                const enrichId = 'enrich_' + Date.now();
+                wineData.enrichId = enrichId;
+                this.wines[index] = wineData;
+            }
             this.showToast('Wine updated!');
+
+            this.saveWines();
+            this.renderWineList();
+            this.updateStats();
+            this.closeModal('addModal');
+
+            // Re-enrich in background (deep analysis + price + photo)
+            this.enrichWineInBackground(wineData.enrichId, wineData);
         } else {
             this.wines.unshift(wineData);
             this.showToast('Wine added to cellar!');
-        }
 
-        this.saveWines();
-        this.renderWineList();
-        this.updateStats();
-        this.closeModal('addModal');
+            this.saveWines();
+            this.renderWineList();
+            this.updateStats();
+            this.closeModal('addModal');
+        }
     }
 
     // ============================
@@ -2442,15 +2445,38 @@ class WineCellar {
 
         this.currentArchiveId = archiveId;
 
-        // Image
-        const detailImage = document.getElementById('archiveDetailImage');
+        // Hero content: product photo or vineyard landscape fallback
+        const heroContent = document.getElementById('archiveDetailHeroContent');
         if (wine.image) {
-            detailImage.innerHTML = `<img src="${wine.image}" alt="${wine.name}"><div class="wine-type-badge">${wine.type}</div>`;
+            heroContent.innerHTML = `<img src="${wine.image}" alt="${wine.name}">`;
         } else {
-            detailImage.innerHTML = `<div class="placeholder-bg ${wine.type}"><span style="font-size: 3rem;">🍷</span></div><div class="wine-type-badge">${wine.type}</div>`;
+            heroContent.innerHTML = `
+                <svg class="vineyard-landscape" viewBox="0 0 375 380" preserveAspectRatio="xMidYMax slice">
+                    <defs>
+                        <linearGradient id="archSky" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#c8dbb8"/><stop offset="60%" stop-color="#e4d49e"/><stop offset="100%" stop-color="#dbb978"/>
+                        </linearGradient>
+                        <linearGradient id="archHill1" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#8fb36a"/><stop offset="100%" stop-color="#6a9148"/>
+                        </linearGradient>
+                        <linearGradient id="archHill2" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#a4c47a"/><stop offset="100%" stop-color="#7da858"/>
+                        </linearGradient>
+                        <linearGradient id="archHill3" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#b8d48e"/><stop offset="100%" stop-color="#94b86a"/>
+                        </linearGradient>
+                    </defs>
+                    <rect fill="url(#archSky)" width="375" height="380"/>
+                    <ellipse fill="url(#archHill1)" cx="100" cy="240" rx="200" ry="60" opacity="0.6"/>
+                    <ellipse fill="url(#archHill1)" cx="320" cy="250" rx="160" ry="50" opacity="0.5"/>
+                    <ellipse fill="url(#archHill2)" cx="60" cy="290" rx="180" ry="55"/>
+                    <ellipse fill="url(#archHill2)" cx="340" cy="280" rx="140" ry="50"/>
+                    <path fill="url(#archHill3)" d="M-20,310 Q80,270 187,295 Q300,320 400,290 L400,380 L-20,380 Z"/>
+                </svg>`;
         }
 
-        // Basic info
+        // Hero info overlay
+        document.getElementById('archiveDetailTypeBadge').textContent = wine.type;
         document.getElementById('archiveDetailName').textContent = wine.name;
 
         const producerEl = document.getElementById('archiveDetailProducer');
@@ -2461,7 +2487,7 @@ class WineCellar {
             producerEl.style.display = 'none';
         }
 
-        document.getElementById('archiveDetailRegion').textContent = wine.region || 'Regio onbekend';
+        document.getElementById('archiveDetailRegion').textContent = wine.region || '';
 
         // Rating display (supports half-stars)
         const starsEl = document.getElementById('archiveDetailStars');
@@ -2636,256 +2662,6 @@ class WineCellar {
             return `Vanaf ${wine.drinkFrom}`;
         }
         return `Tot ${wine.drinkUntil}`;
-    }
-
-    // ============================
-    // Wine Verification
-    // ============================
-
-    openVerifyModal() {
-        const wine = this.wines.find(w => w.id === this.currentWineId);
-        if (!wine) return;
-
-        // Close detail modal first
-        this.closeModal('detailModal');
-
-        // Wait a bit for animation, then open verify modal
-        setTimeout(() => {
-            // Pre-fill fields with current wine data
-            document.getElementById('verifyName').value = wine.name || '';
-            document.getElementById('verifyProducer').value = wine.producer || '';
-            document.getElementById('verifyYear').value = wine.year || '';
-            document.getElementById('verifyGrape').value = wine.grape || '';
-            document.getElementById('verifyRegion').value = wine.region || '';
-
-            // Reset states
-            document.getElementById('verifyFormSection').classList.remove('hidden');
-            document.getElementById('verifyLoading').classList.add('hidden');
-            document.getElementById('verifyResults').classList.add('hidden');
-
-            this.openModal('verifyModal');
-        }, 200);
-    }
-
-    async reanalyzeWine() {
-        // Get updated values from form
-        const name = document.getElementById('verifyName').value.trim();
-        const producer = document.getElementById('verifyProducer').value.trim();
-        const year = document.getElementById('verifyYear').value;
-        const grape = document.getElementById('verifyGrape').value.trim();
-        const region = document.getElementById('verifyRegion').value.trim();
-
-        if (!name) {
-            this.showToast('Vul minimaal de wijn naam in');
-            return;
-        }
-
-        // Show loading state IN the modal
-        document.getElementById('verifyFormSection').classList.add('hidden');
-        document.getElementById('verifyLoading').classList.remove('hidden');
-        document.getElementById('verifyResults').classList.add('hidden');
-
-        try {
-            const idToken = await firebase.auth().currentUser.getIdToken();
-            const response = await fetch(CONFIG.FUNCTIONS.deepAnalyzeWineLabel, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: JSON.stringify({
-                    name: name,
-                    producer: producer,
-                    year: year ? parseInt(year) : null,
-                    grape: grape,
-                    region: region
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success && result.data) {
-                // Store the new data
-                this.verifyNewData = result.data;
-
-                // Fetch price and photo in parallel
-                const enrichmentPromises = [];
-
-                // Search for product photo
-                enrichmentPromises.push(
-                    fetch(CONFIG.FUNCTIONS.searchWineImage, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${idToken}`
-                        },
-                        body: JSON.stringify({
-                            name: result.data.name,
-                            producer: result.data.producer,
-                            year: result.data.year,
-                            type: result.data.type
-                        })
-                    })
-                    .then(res => res.json())
-                    .then(photoResult => {
-                        if (photoResult.success && photoResult.data?.imageBase64) {
-                            this.verifyNewData.newImage = photoResult.data.imageBase64;
-                        }
-                    })
-                    .catch(e => console.log('Photo search failed:', e))
-                );
-
-                // Lookup wine price
-                enrichmentPromises.push(
-                    fetch(CONFIG.FUNCTIONS.lookupWinePrice, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${idToken}`
-                        },
-                        body: JSON.stringify({
-                            name: result.data.name,
-                            producer: result.data.producer,
-                            year: result.data.year,
-                            region: result.data.region
-                        })
-                    })
-                    .then(res => res.json())
-                    .then(priceResult => {
-                        if (priceResult.success && priceResult.data?.price) {
-                            this.verifyNewData.price = priceResult.data.price;
-                        }
-                    })
-                    .catch(e => console.log('Price lookup failed:', e))
-                );
-
-                // Wait for both to complete
-                await Promise.all(enrichmentPromises);
-
-                // Show results
-                this.showVerifyResults(result.data);
-            } else {
-                this.showToast('Geen resultaten gevonden');
-                // Back to form
-                document.getElementById('verifyFormSection').classList.remove('hidden');
-                document.getElementById('verifyLoading').classList.add('hidden');
-            }
-        } catch (error) {
-            console.error('Reanalyze error:', error);
-            this.showToast('Fout bij opnieuw analyseren');
-            // Back to form
-            document.getElementById('verifyFormSection').classList.remove('hidden');
-            document.getElementById('verifyLoading').classList.add('hidden');
-        }
-    }
-
-    showVerifyResults(data) {
-        // Format results nicely with product photo
-        const content = `
-            ${data.newImage ? `
-            <div class="verify-result-photo">
-                <img src="${data.newImage}" alt="${data.name}">
-            </div>
-            ` : ''}
-            <div class="verify-result-item">
-                <span class="verify-result-label">Wijn naam:</span>
-                <span class="verify-result-value">${data.name || '-'}</span>
-            </div>
-            <div class="verify-result-item">
-                <span class="verify-result-label">Producent:</span>
-                <span class="verify-result-value">${data.producer || '-'}</span>
-            </div>
-            <div class="verify-result-item">
-                <span class="verify-result-label">Jaartal:</span>
-                <span class="verify-result-value">${data.year || '-'}</span>
-            </div>
-            <div class="verify-result-item">
-                <span class="verify-result-label">Druif:</span>
-                <span class="verify-result-value">${data.grape || '-'}</span>
-            </div>
-            <div class="verify-result-item">
-                <span class="verify-result-label">Regio:</span>
-                <span class="verify-result-value">${data.region || '-'}</span>
-            </div>
-            <div class="verify-result-item">
-                <span class="verify-result-label">Type:</span>
-                <span class="verify-result-value">${data.type || '-'}</span>
-            </div>
-            ${data.price ? `
-            <div class="verify-result-item">
-                <span class="verify-result-label">Prijs:</span>
-                <span class="verify-result-value">€${data.price}</span>
-            </div>
-            ` : ''}
-            ${data.notes ? `
-            <div class="verify-result-item verify-result-notes">
-                <span class="verify-result-label">Notes:</span>
-                <span class="verify-result-value">${data.notes}</span>
-            </div>
-            ` : ''}
-        `;
-
-        document.getElementById('verifyResultsContent').innerHTML = content;
-
-        // Show results section
-        document.getElementById('verifyLoading').classList.add('hidden');
-        document.getElementById('verifyResults').classList.remove('hidden');
-    }
-
-    closeVerifyResults() {
-        // Back to form
-        document.getElementById('verifyFormSection').classList.remove('hidden');
-        document.getElementById('verifyResults').classList.add('hidden');
-        this.verifyNewData = null;
-    }
-
-    async applyVerifyResults() {
-        if (!this.verifyNewData) return;
-
-        const wine = this.wines.find(w => w.id === this.currentWineId);
-        if (!wine) {
-            this.showToast('Wijn niet gevonden');
-            return;
-        }
-
-        const newData = this.verifyNewData;
-
-        // Update wine with new data
-        wine.name = newData.name || wine.name;
-        wine.producer = newData.producer || wine.producer;
-        wine.year = newData.year || wine.year;
-        wine.grape = newData.grape || wine.grape;
-        wine.region = newData.region || wine.region;
-        wine.type = newData.type || wine.type;
-        wine.notes = newData.notes || wine.notes;
-
-        if (newData.characteristics) {
-            wine.boldness = newData.characteristics.boldness || wine.boldness;
-            wine.tannins = newData.characteristics.tannins || wine.tannins;
-            wine.acidity = newData.characteristics.acidity || wine.acidity;
-        }
-
-        wine.drinkFrom = newData.drinkFrom || wine.drinkFrom;
-        wine.drinkUntil = newData.drinkUntil || wine.drinkUntil;
-
-        // Update photo if available
-        if (newData.newImage) {
-            wine.image = newData.newImage;
-        }
-
-        // Update price if available
-        if (newData.price) {
-            wine.price = newData.price;
-        }
-
-        // Save and update UI
-        await this.saveWines();
-        this.renderWineList();
-        this.closeModal('verifyModal');
-        this.showWineDetail(wine.id);
-        this.showToast('✓ Wijn gegevens bijgewerkt!');
-
-        this.verifyNewData = null;
     }
 
     // ============================

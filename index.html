@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="The Cork">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="styles.css?v=34">
+    <link rel="stylesheet" href="styles.css?v=37">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -536,7 +536,6 @@
                     </div>
 
                     <div class="detail-actions">
-                        <button id="verifyWineBtn" class="detail-action-btn detail-btn-report">Niet juist?</button>
                         <button id="editWineBtn" class="detail-action-btn detail-btn-edit">Edit</button>
                         <button id="deleteWineBtn" class="detail-action-btn detail-btn-delete">Delete</button>
                     </div>
@@ -678,20 +677,20 @@
                     </svg>
                 </button>
 
-                <div class="detail-header">
-                    <div id="archiveDetailImage" class="detail-image">
-                        <div class="wine-type-badge">Red</div>
+                <!-- Hero Section -->
+                <div id="archiveDetailHero" class="detail-hero">
+                    <div id="archiveDetailHeroContent" class="detail-hero-content"></div>
+                    <div class="detail-hero-info">
+                        <span id="archiveDetailTypeBadge" class="detail-type-badge">Red</span>
+                        <div id="archiveDetailName" class="detail-wine-name">Wine Name</div>
+                        <div id="archiveDetailProducer" class="detail-wine-producer">Producer</div>
+                        <div id="archiveDetailRegion" class="detail-wine-region">Region, Country</div>
                     </div>
                 </div>
 
-                <div class="detail-body">
-                    <div class="detail-title-section">
-                        <h2 id="archiveDetailName">Wine Name</h2>
-                        <p id="archiveDetailProducer" class="detail-producer">Producer</p>
-                        <p id="archiveDetailRegion" class="detail-region">Region, Country</p>
-                    </div>
-
-                    <!-- Rating display -->
+                <!-- Content -->
+                <div class="detail-content">
+                    <!-- Rating & Rebuy -->
                     <div class="archive-rating-display">
                         <div class="rating-stars" id="archiveDetailStars">★★★★★</div>
                         <div class="rebuy-badge" id="archiveDetailRebuy">
@@ -700,18 +699,18 @@
                         </div>
                     </div>
 
-                    <div class="detail-meta">
-                        <div class="meta-item">
-                            <span class="meta-label">Jaar</span>
-                            <span id="archiveDetailYear" class="meta-value">2020</span>
+                    <div class="detail-facts-row">
+                        <div class="detail-fact">
+                            <div class="detail-fact-label">Year</div>
+                            <div id="archiveDetailYear" class="detail-fact-value">2020</div>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Druif</span>
-                            <span id="archiveDetailGrape" class="meta-value">Cabernet</span>
+                        <div class="detail-fact">
+                            <div class="detail-fact-label">Grape</div>
+                            <div id="archiveDetailGrape" class="detail-fact-value">Cabernet</div>
                         </div>
-                        <div class="meta-item">
-                            <span class="meta-label">Prijs</span>
-                            <span id="archiveDetailPrice" class="meta-value">€25</span>
+                        <div class="detail-fact">
+                            <div class="detail-fact-label">Price</div>
+                            <div id="archiveDetailPrice" class="detail-fact-value">€25</div>
                         </div>
                     </div>
 
@@ -720,56 +719,36 @@
                         <span id="archiveDetailStore">Winkel</span>
                     </div>
 
-                    <div class="detail-characteristics">
-                        <h3>Profile</h3>
-                        <div class="char-bars">
-                            <div class="char-bar-item">
-                                <span class="char-label">Boldness</span>
-                                <div class="char-bar">
-                                    <div id="archiveDetailBoldness" class="char-fill" style="width: 60%"></div>
-                                </div>
-                            </div>
-                            <div class="char-bar-item">
-                                <span class="char-label">Tannins</span>
-                                <div class="char-bar">
-                                    <div id="archiveDetailTannins" class="char-fill" style="width: 60%"></div>
-                                </div>
-                            </div>
-                            <div class="char-bar-item">
-                                <span class="char-label">Acidity</span>
-                                <div class="char-bar">
-                                    <div id="archiveDetailAcidity" class="char-fill" style="width: 60%"></div>
-                                </div>
-                            </div>
+                    <div class="detail-profile-section">
+                        <div class="detail-profile-title">Profile</div>
+                        <div class="detail-profile-bar">
+                            <span class="detail-bar-label">Boldness</span>
+                            <div class="detail-bar-track"><div id="archiveDetailBoldness" class="detail-bar-fill boldness"></div></div>
+                        </div>
+                        <div class="detail-profile-bar">
+                            <span class="detail-bar-label">Tannins</span>
+                            <div class="detail-bar-track"><div id="archiveDetailTannins" class="detail-bar-fill tannins"></div></div>
+                        </div>
+                        <div class="detail-profile-bar">
+                            <span class="detail-bar-label">Acidity</span>
+                            <div class="detail-bar-track"><div id="archiveDetailAcidity" class="detail-bar-fill acidity"></div></div>
                         </div>
                     </div>
 
-                    <div id="archiveDetailNotesSection" class="detail-notes">
-                        <h3>Tasting Notes</h3>
-                        <p id="archiveDetailNotes"></p>
+                    <div id="archiveDetailNotesSection" class="detail-notes-section">
+                        <div class="detail-notes-label">Notes</div>
+                        <div id="archiveDetailNotes" class="detail-notes-text"></div>
                     </div>
 
-                    <div id="archiveDetailReviewSection" class="detail-notes archive-review">
-                        <h3>Mijn Review</h3>
-                        <p id="archiveDetailReview"></p>
+                    <div id="archiveDetailReviewSection" class="detail-notes-section archive-review">
+                        <div class="detail-notes-label">Mijn Review</div>
+                        <div id="archiveDetailReview" class="detail-notes-text"></div>
                         <span class="archive-date" id="archiveDetailDate"></span>
                     </div>
 
                     <div class="detail-actions">
-                        <button id="restoreWineBtn" class="action-btn restore-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                                <path d="M3 3v5h5"/>
-                            </svg>
-                            Terugzetten
-                        </button>
-                        <button id="deleteArchiveBtn" class="action-btn delete-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="3 6 5 6 21 6"/>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            </svg>
-                            Verwijderen
-                        </button>
+                        <button id="restoreWineBtn" class="detail-action-btn detail-btn-edit">Terugzetten</button>
+                        <button id="deleteArchiveBtn" class="detail-action-btn detail-btn-delete">Verwijderen</button>
                     </div>
                 </div>
             </div>
@@ -792,79 +771,6 @@
             </div>
         </div>
 
-        <!-- Verification Modal -->
-        <div id="verifyModal" class="modal">
-            <div class="modal-content detail-modal verify-modal">
-                <button class="close-btn detail-close" id="verifyModalCloseBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-
-                <div class="verify-header">
-                    <h2>🔄 Wijn controleren</h2>
-                    <p class="verify-subtitle">Pas de gegevens aan en klik op 'Analyseer opnieuw'</p>
-                </div>
-
-                <div class="verify-body">
-                    <div class="verify-form" id="verifyFormSection">
-                        <div class="form-group">
-                            <label class="verify-label">Wijn Naam</label>
-                            <input type="text" id="verifyName" class="form-input" placeholder="Naam van de wijn">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="verify-label">Producent</label>
-                            <input type="text" id="verifyProducer" class="form-input" placeholder="Château, Domaine, etc.">
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="verify-label">Jaartal</label>
-                                <input type="number" id="verifyYear" class="form-input" placeholder="2020" min="1900" max="2099">
-                            </div>
-                            <div class="form-group">
-                                <label class="verify-label">Druif</label>
-                                <input type="text" id="verifyGrape" class="form-input" placeholder="Cabernet Sauvignon">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="verify-label">Regio</label>
-                            <input type="text" id="verifyRegion" class="form-input" placeholder="Regio, Land">
-                        </div>
-
-                        <button class="action-btn verify-analyze-btn" id="reanalyzeBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M12 6v6l4 2"></path>
-                            </svg>
-                            Analyseer opnieuw
-                        </button>
-                    </div>
-
-                    <!-- Loading State -->
-                    <div class="verify-loading hidden" id="verifyLoading">
-                        <div class="scanning-animation">
-                            <div class="scan-line"></div>
-                        </div>
-                        <p>Zoeken naar wijn informatie...</p>
-                    </div>
-
-                    <!-- Results Section -->
-                    <div class="verify-results hidden" id="verifyResults">
-                        <h3>✨ Gevonden informatie</h3>
-                        <div class="verify-results-content" id="verifyResultsContent"></div>
-                        <div class="verify-results-actions">
-                            <button class="btn btn-secondary" id="verifyResultsCancelBtn">Annuleren</button>
-                            <button class="btn btn-primary" id="verifyResultsApplyBtn">✓ Gebruik deze informatie</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Toast Notification -->
         <div id="toast" class="toast">
             <span id="toastMessage"></span>
@@ -876,7 +782,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-    <script src="config.js?v=34"></script>
-    <script src="app.js?v=34"></script>
+    <script src="config.js?v=37"></script>
+    <script src="app.js?v=37"></script>
 </body>
 </html>
