@@ -1098,15 +1098,6 @@ class WineCellar {
                 console.log('🔄 Naam overgenomen van bestaande wijn:', existingWine.name, existingWine.producer);
             }
 
-            // Als jaartal ontbreekt, vraag de gebruiker
-            if (!wineData.year) {
-                indicator.classList.add('hidden');
-                const userYear = await this.promptForYear();
-                if (userYear) {
-                    wineData.year = userYear;
-                }
-            }
-
             // Auto-save: sla wijn direct op en sluit modal
             indicator.classList.add('hidden');
 
@@ -1407,33 +1398,72 @@ class WineCellar {
         });
     }
 
-    promptForYear() {
+    promptForYear(wineId) {
         return new Promise((resolve) => {
             const modal = document.getElementById('yearModal');
-            const input = document.getElementById('yearInput');
-            const confirmBtn = document.getElementById('yearConfirmBtn');
-            const skipBtn = document.getElementById('yearSkipBtn');
+            const currentYear = new Date().getFullYear();
+            const buttonsContainer = modal.querySelector('.year-picker-buttons');
 
-            input.value = '';
+            // Generate year buttons: last 10 years + "Overig"
+            let html = '';
+            for (let y = currentYear; y >= currentYear - 9; y--) {
+                html += `<button class="year-pick-btn" data-year="${y}">${y}</button>`;
+            }
+            html += `<button class="year-pick-btn year-pick-other">Overig</button>`;
+            buttonsContainer.innerHTML = html;
+
             modal.classList.add('active');
-            setTimeout(() => input.focus(), 350); // Wait for modal animation
 
             const cleanup = () => {
                 modal.classList.remove('active');
-                confirmBtn.onclick = null;
-                skipBtn.onclick = null;
+                buttonsContainer.innerHTML = '';
             };
 
-            confirmBtn.onclick = () => {
-                const year = parseInt(input.value);
-                cleanup();
-                resolve(year && year >= 1900 && year <= 2099 ? year : null);
-            };
+            // Year button clicks
+            buttonsContainer.addEventListener('click', function handler(e) {
+                const btn = e.target.closest('.year-pick-btn');
+                if (!btn) return;
 
-            skipBtn.onclick = () => {
+                buttonsContainer.removeEventListener('click', handler);
+
+                if (btn.classList.contains('year-pick-other')) {
+                    // Show custom input
+                    buttonsContainer.innerHTML = `
+                        <div class="year-custom-input">
+                            <input type="number" class="form-input year-custom-field" placeholder="Bijv. 2015" min="1900" max="2099" inputmode="numeric">
+                            <button class="year-pick-btn year-pick-confirm">Bevestig</button>
+                        </div>
+                    `;
+                    const input = buttonsContainer.querySelector('.year-custom-field');
+                    const confirmBtn = buttonsContainer.querySelector('.year-pick-confirm');
+                    setTimeout(() => input.focus(), 100);
+
+                    confirmBtn.addEventListener('click', () => {
+                        const year = parseInt(input.value);
+                        cleanup();
+                        resolve(year && year >= 1900 && year <= 2099 ? year : null);
+                    });
+
+                    input.addEventListener('keydown', (ev) => {
+                        if (ev.key === 'Enter') {
+                            const year = parseInt(input.value);
+                            cleanup();
+                            resolve(year && year >= 1900 && year <= 2099 ? year : null);
+                        }
+                    });
+                } else {
+                    const year = parseInt(btn.dataset.year);
+                    cleanup();
+                    resolve(year);
+                }
+            });
+
+            // Skip button
+            modal.querySelector('.year-pick-skip')?.addEventListener('click', function handler() {
+                modal.querySelector('.year-pick-skip')?.removeEventListener('click', handler);
                 cleanup();
                 resolve(null);
-            };
+            });
         });
     }
 
@@ -1855,6 +1885,7 @@ class WineCellar {
                                 <span class="wine-type-tag ${wine.type}">${wine.type}</span>
                                 ${wine.quantity > 1 ? `<span class="wine-quantity-badge">${wine.quantity}x</span>` : ''}
                                 ${wine.price ? `<span class="wine-price-tag">€${wine.price}</span>` : ''}
+                                ${!wine.year ? '<span class="wine-year-missing-tag">+ jaartal</span>' : ''}
                                 ${isProcessing ? '<span class="wine-enriching-tag"><span class="enriching-spinner"></span>verrijken...</span>' : ''}
                                 ${drinkStatus.label ? `<span class="wine-drink-status ${drinkStatus.class}">${drinkStatus.label}</span>` : ''}
                             </div>
@@ -1867,13 +1898,29 @@ class WineCellar {
 
         // Bind click events for opening detail modal
         list.querySelectorAll('.swipe-content').forEach(content => {
-            content.addEventListener('click', (e) => {
+            content.addEventListener('click', async (e) => {
                 // Only open if not swiped
                 const transform = content.style.transform;
                 if (!transform || transform === 'translateX(0px)' || transform === 'translateX(0)') {
                     const container = content.closest('.swipe-container');
                     if (container) {
-                        this.openDetailModal(container.dataset.id);
+                        const wineId = container.dataset.id;
+                        const wine = this.wines.find(w => w.id === wineId);
+
+                        // If no year, show year picker first
+                        if (wine && !wine.year) {
+                            const year = await this.promptForYear(wineId);
+                            if (year) {
+                                wine.year = year;
+                                const drinkWindow = this.estimateDrinkWindow(wine);
+                                wine.drinkFrom = drinkWindow.from;
+                                wine.drinkUntil = drinkWindow.until;
+                                await this.saveWines();
+                                this.renderWineList();
+                            }
+                        }
+
+                        this.openDetailModal(wineId);
                     }
                 }
             });

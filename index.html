@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="The Cork">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="styles.css?v=38">
+    <link rel="stylesheet" href="styles.css?v=39">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -748,20 +748,15 @@
             </div>
         </div>
 
-        <!-- Year Input Modal -->
+        <!-- Year Picker Modal -->
         <div id="yearModal" class="modal">
             <div class="modal-content year-modal">
-                <div class="modal-header">
-                    <h2>Jaartal ontbreekt</h2>
+                <div class="year-picker-header">
+                    <h2>Welk jaartal?</h2>
+                    <p>Selecteer het vintage jaar</p>
                 </div>
-                <div class="modal-body">
-                    <p>Het jaartal kon niet van het etiket worden gelezen. Voer het jaartal in voor een nauwkeurigere prijs en drinkadvies.</p>
-                    <input type="number" id="yearInput" class="form-input" placeholder="Bijv. 2020" min="1900" max="2099" inputmode="numeric">
-                    <div class="year-modal-buttons">
-                        <button id="yearSkipBtn" class="btn-secondary">Overslaan</button>
-                        <button id="yearConfirmBtn" class="btn-primary">Bevestigen</button>
-                    </div>
-                </div>
+                <div class="year-picker-buttons"></div>
+                <button class="year-pick-skip">Overslaan</button>
             </div>
         </div>
 
@@ -776,7 +771,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-    <script src="config.js?v=38"></script>
-    <script src="app.js?v=38"></script>
+    <script src="config.js?v=39"></script>
+    <script src="app.js?v=39"></script>
 </body>
 </html>

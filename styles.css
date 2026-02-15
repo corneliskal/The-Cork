@@ -2028,71 +2028,118 @@ body {
    ============================ */
 
 .year-modal {
-    max-height: 320px;
+    max-width: 340px;
+    padding: 24px;
 }
 
-.year-modal .modal-body p {
-    margin-bottom: var(--space-12);
+.year-picker-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.year-picker-header h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--label-primary);
+}
+
+.year-picker-header p {
+    margin: 0;
+    font-size: 14px;
     color: var(--label-secondary);
-    font-size: var(--font-body);
-    line-height: 1.4;
 }
 
-.year-modal .modal-body input[type="number"] {
-    width: 100%;
+.year-picker-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.year-pick-btn {
     height: 44px;
-    padding: 0 var(--space-12);
     border: 1px solid var(--separator-opaque);
-    border-radius: var(--radius-md);
-    font-size: var(--font-body);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--label-primary);
+    font-size: 16px;
+    font-weight: 500;
+    font-family: var(--font-system);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.year-pick-btn:hover {
+    background: var(--bg-tertiary);
+}
+
+.year-pick-btn:active {
+    background: var(--wine-primary);
+    color: white;
+    border-color: var(--wine-primary);
+}
+
+.year-pick-other {
+    grid-column: 1 / -1;
+    background: var(--bg-tertiary);
+    color: var(--label-secondary);
+    font-size: 14px;
+}
+
+.year-pick-skip {
+    display: block;
+    width: 100%;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: var(--label-tertiary);
+    font-size: 14px;
+    font-family: var(--font-system);
+    cursor: pointer;
+}
+
+.year-pick-skip:hover {
+    color: var(--label-secondary);
+}
+
+.year-custom-input {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 8px;
+}
+
+.year-custom-field {
+    flex: 1;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--wine-primary);
+    border-radius: 10px;
+    font-size: 16px;
     font-family: var(--font-system);
     color: var(--label-primary);
     background: var(--bg-secondary);
     -webkit-appearance: none;
-}
-
-.year-modal .modal-body input[type="number"]:focus {
     outline: none;
-    border-color: var(--wine-primary);
 }
 
-.year-modal-buttons {
-    display: flex;
-    gap: var(--space-12);
-    margin-top: var(--space-16);
-}
-
-.year-modal-buttons button {
-    flex: 1;
-}
-
-.year-modal-buttons .btn-secondary {
-    height: 44px;
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--bg-tertiary);
-    color: var(--label-secondary);
-    font-size: var(--font-body);
-    cursor: pointer;
-}
-
-.year-modal-buttons .btn-secondary:active {
-    background: rgba(60, 60, 67, 0.12);
-}
-
-.year-modal-buttons .btn-primary {
-    height: 44px;
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--wine-primary);
-    color: white;
-    font-size: var(--font-body);
+.year-pick-confirm {
+    background: var(--wine-primary) !important;
+    color: white !important;
+    border-color: var(--wine-primary) !important;
     font-weight: 600;
-    cursor: pointer;
+    padding: 0 20px;
 }
 
-.year-modal-buttons .btn-primary:active {
-    opacity: 0.8;
+/* Missing year badge on wine card */
+.wine-year-missing-tag {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--wine-primary);
+    background: rgba(180, 40, 40, 0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.2px;
 }
 
 /* ============================
