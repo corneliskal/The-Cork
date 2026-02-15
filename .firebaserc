@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "the-cork-claude"
+  },
+  "targets": {
+    "the-cork-claude": {
+      "hosting": {
+        "the-cork-claude": [
+          "the-cork-claude"
+        ],
+        "dev-the-cork-claude": [
+          "dev-the-cork-claude"
+        ]
+      }
+    }
+  }
+}
