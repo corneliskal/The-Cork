@@ -1929,13 +1929,11 @@ class WineCellar {
                             ${wine.producer ? `<p class="wine-card-producer">${this.highlightMatch(wine.producer)}</p>` : ''}
                             <p class="wine-card-meta">${this.highlightMatch([wine.grape, wine.year].filter(Boolean).join(' · ') || wine.region || 'No details')}</p>
                             <div class="wine-card-footer">
-                                <div class="wine-card-tags">
-                                    <span class="wine-type-tag ${wine.type}">${wine.type}</span>
-                                    ${wine.quantity > 1 ? `<span class="wine-quantity-badge">${wine.quantity}x</span>` : ''}
-                                    ${isProcessing ? '<span class="wine-enriching-tag"><span class="enriching-spinner"></span>verrijken...</span>' : ''}
-                                    ${!wine.year ? '<span class="wine-year-missing-tag">+ jaartal</span>' : (drinkStatus.label ? `<span class="wine-drink-status ${drinkStatus.class}">${drinkStatus.label}</span>` : '')}
-                                </div>
+                                <span class="wine-type-tag ${wine.type}">${wine.type}</span>
+                                ${wine.quantity > 1 ? `<span class="wine-quantity-badge">${wine.quantity}x</span>` : ''}
                                 ${wine.price ? `<span class="wine-price-tag">€${wine.price}</span>` : ''}
+                                ${isProcessing ? '<span class="wine-enriching-tag"><span class="enriching-spinner"></span>verrijken...</span>' : ''}
+                                ${!wine.year ? '<span class="wine-year-missing-tag">+ jaartal</span>' : (drinkStatus.label ? `<span class="wine-drink-status ${drinkStatus.class}">${drinkStatus.label}</span>` : '')}
                             </div>
                         </div>
                     </div>
