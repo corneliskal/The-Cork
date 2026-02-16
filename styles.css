@@ -649,13 +649,6 @@ body {
     color: var(--label-secondary);
 }
 
-.wine-card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: var(--space-4);
-}
-
 .wine-type-tag {
     font-size: var(--font-caption2);
     font-weight: 600;
@@ -2720,9 +2713,16 @@ body {
 .wine-card-footer {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    justify-content: space-between;
     gap: var(--space-8);
     margin-top: var(--space-4);
+}
+
+.wine-card-tags {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-6);
 }
 
 .wine-quantity-badge {
