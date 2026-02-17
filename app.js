@@ -305,13 +305,13 @@ class WineCellar {
                 const result = await firebase.auth().getRedirectResult();
                 if (result.user) {
                     console.log('Redirect sign-in successful:', result.user.displayName);
-                    this.showToast(`Ingelogd als ${result.user.displayName}`);
+                    this.showToast(`Signed in as ${result.user.displayName}`);
                 }
             } catch (redirectError) {
                 console.error('Redirect result error:', redirectError);
                 // Don't show error for initial page load (no redirect pending)
                 if (redirectError.code !== 'auth/null-user') {
-                    this.showToast('Inloggen mislukt: ' + redirectError.message);
+                    this.showToast('Sign in failed:' + redirectError.message);
                 }
             }
 
@@ -360,12 +360,12 @@ class WineCellar {
             } else {
                 // Use popup for desktop (faster UX)
                 const result = await firebase.auth().signInWithPopup(provider);
-                this.showToast(`Ingelogd als ${result.user.displayName}`);
+                this.showToast(`Signed in as ${result.user.displayName}`);
             }
         } catch (error) {
             console.error('Google sign-in error:', error);
             if (error.code !== 'auth/popup-closed-by-user') {
-                this.showToast('Inloggen mislukt: ' + error.message);
+                this.showToast('Sign in failed:' + error.message);
             }
             this.updateSyncStatus('disconnected');
         }
@@ -381,12 +381,12 @@ class WineCellar {
         const forgotBtn = document.getElementById('forgotPasswordBtn');
 
         if (this.isRegisterMode) {
-            btn.textContent = 'Registreren';
-            toggleBtn.innerHTML = 'Al een account? <span>Inloggen</span>';
+            btn.textContent = 'Register';
+            toggleBtn.innerHTML = 'Already have an account? <span>Sign in</span>';
             forgotBtn.style.display = 'none';
         } else {
-            btn.textContent = 'Inloggen';
-            toggleBtn.innerHTML = 'Nog geen account? <span>Registreren</span>';
+            btn.textContent = 'Sign in';
+            toggleBtn.innerHTML = 'Don\'t have an account? <span>Register</span>';
             forgotBtn.style.display = 'block';
         }
     }
@@ -398,7 +398,7 @@ class WineCellar {
         const password = document.getElementById('loginPassword').value;
 
         if (!email || !password) {
-            this.showToast('Vul e-mailadres en wachtwoord in');
+            this.showToast('Please enter email and password');
             return;
         }
 
@@ -408,29 +408,28 @@ class WineCellar {
             if (this.isRegisterMode) {
                 // Register new user
                 const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
-                this.showToast('Account aangemaakt!');
+                this.showToast('Account created!');
                 console.log('User registered:', result.user.email);
             } else {
                 // Sign in existing user
                 const result = await firebase.auth().signInWithEmailAndPassword(email, password);
-                this.showToast(`Ingelogd als ${result.user.email}`);
+                this.showToast(`Signed in as ${result.user.email}`);
                 console.log('User signed in:', result.user.email);
             }
         } catch (error) {
             console.error('Email auth error:', error);
             this.updateSyncStatus('disconnected');
 
-            // User-friendly error messages in Dutch
             const errorMessages = {
-                'auth/email-already-in-use': 'Dit e-mailadres is al in gebruik',
-                'auth/invalid-email': 'Ongeldig e-mailadres',
-                'auth/operation-not-allowed': 'Email/wachtwoord login is niet ingeschakeld',
-                'auth/weak-password': 'Wachtwoord moet minimaal 6 tekens zijn',
-                'auth/user-disabled': 'Dit account is uitgeschakeld',
-                'auth/user-not-found': 'Geen account gevonden met dit e-mailadres',
-                'auth/wrong-password': 'Onjuist wachtwoord',
-                'auth/invalid-credential': 'Ongeldige inloggegevens',
-                'auth/too-many-requests': 'Te veel pogingen. Probeer later opnieuw'
+                'auth/email-already-in-use': 'This email address is already in use',
+                'auth/invalid-email': 'Invalid email address',
+                'auth/operation-not-allowed': 'Email/password sign in is not enabled',
+                'auth/weak-password': 'Password must be at least 6 characters',
+                'auth/user-disabled': 'This account has been disabled',
+                'auth/user-not-found': 'No account found with this email address',
+                'auth/wrong-password': 'Incorrect password',
+                'auth/invalid-credential': 'Invalid credentials',
+                'auth/too-many-requests': 'Too many attempts. Please try again later'
             };
 
             const message = errorMessages[error.code] || error.message;
@@ -442,19 +441,19 @@ class WineCellar {
         const email = document.getElementById('loginEmail').value.trim();
 
         if (!email) {
-            this.showToast('Vul eerst je e-mailadres in');
+            this.showToast('Please enter your email address first');
             return;
         }
 
         try {
             await firebase.auth().sendPasswordResetEmail(email);
-            this.showToast('Wachtwoord reset e-mail verstuurd!');
+            this.showToast('Password reset email sent!');
         } catch (error) {
             console.error('Password reset error:', error);
 
             const errorMessages = {
-                'auth/invalid-email': 'Ongeldig e-mailadres',
-                'auth/user-not-found': 'Geen account gevonden met dit e-mailadres'
+                'auth/invalid-email': 'Invalid email address',
+                'auth/user-not-found': 'No account found with this email address'
             };
 
             const message = errorMessages[error.code] || error.message;
@@ -512,7 +511,7 @@ class WineCellar {
         if (user && !user.isAnonymous) {
             // User is signed in with Google
             if (userInfo) {
-                userInfo.innerHTML = `✓ Ingelogd als <strong>${user.displayName || user.email}</strong>`;
+                userInfo.innerHTML = `✓ Signed in as <strong>${user.displayName || user.email}</strong>`;
                 userInfo.style.display = 'block';
             }
             if (signInBtn) signInBtn.style.display = 'none';
@@ -656,12 +655,12 @@ class WineCellar {
         const cloudOffSvg = `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46A5.47 5.47 0 0 1 12 6a5.5 5.5 0 0 1 5.5 5.5v.5H19a3 3 0 0 1 3 3c0 1.13-.64 2.11-1.56 2.62l1.45 1.45C23.16 18.16 24 16.68 24 15c0-2.64-2.05-4.78-4.65-4.96zM3 5.27l2.75 2.74C2.56 8.15 0 10.77 0 14c0 3.31 2.69 6 6 6h11.73l2 2 1.27-1.27L4.27 4 3 5.27zM7.73 10l8 8H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h1.73z"/></svg>`;
 
         const statusMap = {
-            'local': { icon: cloudOffSvg, class: 'status-local', settingsText: 'Niet geconfigureerd - Data wordt alleen lokaal opgeslagen' },
-            'connecting': { icon: cloudSvg, class: 'status-connecting', settingsText: 'Verbinden met cloud...' },
-            'synced': { icon: cloudSvg, class: 'status-synced', settingsText: '✓ Verbonden - Je wijnen worden automatisch gesynchroniseerd' },
-            'syncing': { icon: cloudSvg, class: 'status-syncing', settingsText: 'Synchroniseren...' },
-            'error': { icon: cloudOffSvg, class: 'status-error', settingsText: '⚠️ Synchronisatie fout - Probeer later opnieuw' },
-            'disconnected': { icon: cloudOffSvg, class: 'status-disconnected', settingsText: 'Offline - Data wordt lokaal opgeslagen' }
+            'local': { icon: cloudOffSvg, class: 'status-local', settingsText: 'Not configured - Data is stored locally only' },
+            'connecting': { icon: cloudSvg, class: 'status-connecting', settingsText: 'Connecting to cloud...' },
+            'synced': { icon: cloudSvg, class: 'status-synced', settingsText: '✓ Connected - Your wines are synced automatically' },
+            'syncing': { icon: cloudSvg, class: 'status-syncing', settingsText: 'Syncing...' },
+            'error': { icon: cloudOffSvg, class: 'status-error', settingsText: '⚠️ Sync error - Please try again later' },
+            'disconnected': { icon: cloudOffSvg, class: 'status-disconnected', settingsText: 'Offline - Data is stored locally' }
         };
 
         const s = statusMap[status] || statusMap['local'];
@@ -1082,12 +1081,12 @@ class WineCellar {
 
         // Check if Cloud Functions are available
         if (!this.cloudFunctionsAvailable) {
-            indicatorText.textContent = 'AI niet beschikbaar - demo modus...';
+            indicatorText.textContent = 'AI not available - demo mode...';
             setTimeout(() => {
                 indicator.classList.add('hidden');
                 const wineData = this.generateDemoWineData();
                 this.populateForm(wineData);
-                this.showToast('Demo modus: Cloud Functions nog niet geconfigureerd');
+                this.showToast('Demo mode: Cloud Functions not configured yet');
             }, 1500);
             return;
         }
@@ -1114,7 +1113,7 @@ class WineCellar {
             const savedWine = {
                 id: enrichId,
                 enrichId: enrichId,
-                name: wineData.name || 'Onbekende wijn',
+                name: wineData.name || 'Unknown wine',
                 producer: wineData.producer || null,
                 type: wineData.type || 'red',
                 year: wineData.year || null,
@@ -1148,13 +1147,13 @@ class WineCellar {
             indicator.classList.add('hidden');
 
             if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-                this.showToast('Niet geautoriseerd. Log opnieuw in.');
+                this.showToast('Not authorized. Please sign in again.');
             } else if (error.message.includes('429')) {
-                this.showToast('Te veel verzoeken. Probeer het later.');
+                this.showToast('Too many requests. Please try again later.');
             } else if (error.message.includes('not configured')) {
-                this.showToast('AI service niet geconfigureerd.');
+                this.showToast('AI service not configured.');
             } else {
-                this.showToast('Kan afbeelding niet analyseren. Voer handmatig in.');
+                this.showToast('Could not analyze image. Please enter manually.');
             }
         }
     }
@@ -1753,8 +1752,8 @@ class WineCellar {
         ).join('');
 
         section.innerHTML = `
-            <h4>Druif</h4>
-            <button class="control-option${this.grapeFilter === 'all' ? ' active' : ''}" data-filter="grape" data-value="all">Alles</button>
+            <h4>Grape</h4>
+            <button class="control-option${this.grapeFilter === 'all' ? ' active' : ''}" data-filter="grape" data-value="all">All</button>
             ${buttonsHtml}
         `;
     }
@@ -1788,6 +1787,19 @@ class WineCellar {
 
                 // Default: by addedAt
                 return new Date(b.addedAt) - new Date(a.addedAt);
+            });
+        } else if (this.sortBy === 'name_asc') {
+            this.wines.sort((a, b) => {
+                const nameA = (a.name || '').toLowerCase();
+                const nameB = (b.name || '').toLowerCase();
+                return nameA.localeCompare(nameB) || new Date(b.addedAt) - new Date(a.addedAt);
+            });
+        } else if (this.sortBy === 'grape_asc') {
+            this.wines.sort((a, b) => {
+                if (!a.grape && !b.grape) return new Date(b.addedAt) - new Date(a.addedAt);
+                if (!a.grape) return 1;
+                if (!b.grape) return -1;
+                return a.grape.toLowerCase().localeCompare(b.grape.toLowerCase()) || (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
             });
         } else if (this.sortBy === 'price_asc') {
             // Sort by price ascending (cheapest first, wines without price at the end)
@@ -1938,7 +1950,7 @@ class WineCellar {
                                 <span class="wine-type-tag ${wine.type}">${wine.type}</span>
                                 ${wine.quantity > 1 ? `<span class="wine-quantity-badge">${wine.quantity}x</span>` : ''}
                                 ${wine.price ? `<span class="wine-price-tag">€${wine.price}</span>` : ''}
-                                ${isProcessing ? '<span class="wine-enriching-tag"><span class="enriching-spinner"></span>verrijken...</span>' : ''}
+                                ${isProcessing ? '<span class="wine-enriching-tag"><span class="enriching-spinner"></span>enriching...</span>' : ''}
                                 ${!wine.year ? '<span class="wine-year-missing-tag">+ jaartal</span>' : (drinkStatus.label ? `<span class="wine-drink-status ${drinkStatus.class}">${drinkStatus.label}</span>` : '')}
                             </div>
                         </div>
@@ -2236,7 +2248,7 @@ class WineCellar {
         document.querySelectorAll('#archiveRating .star').forEach(star => {
             star.classList.remove('active', 'hover');
         });
-        document.getElementById('ratingLabel').textContent = 'Selecteer een beoordeling';
+        document.getElementById('ratingLabel').textContent = 'Select a rating';
 
         // Reset rebuy buttons
         document.querySelectorAll('#rebuyOptions .rebuy-btn').forEach(btn => {
@@ -2253,12 +2265,12 @@ class WineCellar {
         this.archiveRating = rating;
         // Labels for 5-star ratings
         const labels = {
-            0: 'Selecteer een beoordeling',
-            1: 'Slecht',
-            2: 'Matig',
-            3: 'Goed',
-            4: 'Heel goed',
-            5: 'Uitstekend!'
+            0: 'Select a rating',
+            1: 'Poor',
+            2: 'Fair',
+            3: 'Good',
+            4: 'Very good',
+            5: 'Excellent!'
         };
         document.getElementById('ratingLabel').textContent = labels[rating] || '';
         this.updateStarDisplay(rating, 'active');
@@ -2307,7 +2319,7 @@ class WineCellar {
             // Just delete without archiving
             await this.deleteCurrentWine();
             this.closeModal('archiveModal');
-            this.showToast('Wijn verwijderd');
+            this.showToast('Wine deleted');
         } catch (error) {
             console.error('Error in skipArchiveAndDelete:', error);
         }
@@ -2435,7 +2447,7 @@ class WineCellar {
         const statsEl = document.getElementById('archiveCount');
 
         // Update count
-        statsEl.textContent = `${this.filteredArchive.length} wijn${this.filteredArchive.length !== 1 ? 'en' : ''}`;
+        statsEl.textContent = `${this.filteredArchive.length} wine${this.filteredArchive.length !== 1 ? 's' : ''}`;
 
         if (this.archive.length === 0) {
             list.innerHTML = '';
@@ -2453,7 +2465,7 @@ class WineCellar {
         if (this.filteredArchive.length === 0) {
             list.innerHTML = `
                 <div class="no-results">
-                    <p>Geen wijnen gevonden</p>
+                    <p>No wines found</p>
                 </div>
             `;
             return;
@@ -2461,7 +2473,7 @@ class WineCellar {
 
         list.innerHTML = this.filteredArchive.map(wine => {
             const stars = this.getStarDisplay(wine.rating || 0);
-            const rebuyLabels = { yes: 'Opnieuw', maybe: 'Misschien', no: 'Niet meer' };
+            const rebuyLabels = { yes: 'Rebuy', maybe: 'Maybe', no: 'Don\'t rebuy' };
             const rebuyLabel = rebuyLabels[wine.rebuy] || '';
 
             return `
@@ -2475,7 +2487,7 @@ class WineCellar {
                                 <line x1="10" y1="11" x2="10" y2="17"/>
                                 <line x1="14" y1="11" x2="14" y2="17"/>
                             </svg>
-                            <span>Verwijder</span>
+                            <span>Delete</span>
                         </div>
                     </div>
                     <div class="swipe-content">
@@ -2616,9 +2628,9 @@ class WineCellar {
         const rebuyEl = document.getElementById('archiveDetailRebuy');
         if (wine.rebuy) {
             const rebuyConfig = {
-                yes: { icon: '👍', text: 'Opnieuw kopen', class: 'yes' },
-                maybe: { icon: '🤔', text: 'Misschien', class: 'maybe' },
-                no: { icon: '👎', text: 'Niet meer', class: 'no' }
+                yes: { icon: '👍', text: 'Rebuy', class: 'yes' },
+                maybe: { icon: '🤔', text: 'Maybe', class: 'maybe' },
+                no: { icon: '👎', text: 'Don\'t rebuy', class: 'no' }
             };
             const config = rebuyConfig[wine.rebuy];
             rebuyEl.innerHTML = `<span class="rebuy-icon">${config.icon}</span><span>${config.text}</span>`;
@@ -2716,11 +2728,11 @@ class WineCellar {
         this.filterAndRenderArchive();
 
         this.closeModal('archiveDetailModal');
-        this.showToast('Wijn teruggezet naar kelder!');
+        this.showToast('Wine moved back to cellar!');
     }
 
     async deleteFromArchiveConfirm() {
-        if (!confirm('Weet je zeker dat je deze wijn definitief wilt verwijderen uit het archief?')) {
+        if (!confirm('Are you sure you want to permanently delete this wine from the archive?')) {
             return;
         }
 
@@ -2728,7 +2740,7 @@ class WineCellar {
         this.filterAndRenderArchive();
 
         this.closeModal('archiveDetailModal');
-        this.showToast('Wijn verwijderd uit archief');
+        this.showToast('Wine deleted from archive');
     }
 
     // ============================

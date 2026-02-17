@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="The Cork">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="styles.css?v=43">
+    <link rel="stylesheet" href="styles.css?v=44">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -62,32 +62,32 @@
                     <span class="login-logo-title">The Cork</span>
                     <span class="login-logo-tagline">Wine Cellar Inventory</span>
                 </div>
-                <h1>Welkom bij The Cork</h1>
-                <p>Log in om je wijnkelder te beheren en te synchroniseren tussen al je apparaten.</p>
+                <h1>Welcome to The Cork</h1>
+                <p>Sign in to manage your wine cellar and sync across all your devices.</p>
 
                 <!-- Email/Password Form -->
                 <form id="emailAuthForm" class="email-auth-form">
                     <div class="form-group">
-                        <input type="email" id="loginEmail" class="auth-input" placeholder="E-mailadres" required>
+                        <input type="email" id="loginEmail" class="auth-input" placeholder="Email address" required>
                     </div>
                     <div class="form-group">
-                        <input type="password" id="loginPassword" class="auth-input" placeholder="Wachtwoord" required minlength="6">
+                        <input type="password" id="loginPassword" class="auth-input" placeholder="Password" required minlength="6">
                     </div>
                     <button type="submit" id="emailSignInBtn" class="email-sign-in-btn">
-                        Inloggen
+                        Sign in
                     </button>
                 </form>
 
                 <button type="button" id="toggleRegisterBtn" class="toggle-auth-btn">
-                    Nog geen account? <span>Registreren</span>
+                    Don't have an account? <span>Register</span>
                 </button>
 
                 <button type="button" id="forgotPasswordBtn" class="forgot-password-btn">
-                    Wachtwoord vergeten?
+                    Forgot password?
                 </button>
 
                 <div class="auth-divider">
-                    <span>of</span>
+                    <span>or</span>
                 </div>
 
                 <button id="loginGoogleBtn" class="google-sign-in-btn large">
@@ -97,7 +97,7 @@
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                     </svg>
-                    Inloggen met Google
+                    Sign in with Google
                 </button>
             </div>
         </div>
@@ -124,7 +124,7 @@
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
                         </svg>
                     </button>
-                    <button id="sortBtn" class="search-action-btn" title="Sorteer">
+                    <button id="sortBtn" class="search-action-btn" title="Sort">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="3" y1="6" x2="21" y2="6"/>
                             <line x1="6" y1="12" x2="18" y2="12"/>
@@ -135,17 +135,19 @@
 
                 <!-- Sort Dropdown -->
                 <div id="sortDropdown" class="control-dropdown hidden">
-                    <button class="control-option active" data-sort="recent">Recent toegevoegd</button>
-                    <button class="control-option" data-sort="drinkability">Op dronk</button>
-                    <button class="control-option" data-sort="price_asc">Prijs (laag → hoog)</button>
-                    <button class="control-option" data-sort="price_desc">Prijs (hoog → laag)</button>
+                    <button class="control-option active" data-sort="recent">Recently added</button>
+                    <button class="control-option" data-sort="name_asc">Name (A → Z)</button>
+                    <button class="control-option" data-sort="grape_asc">Grape (A → Z)</button>
+                    <button class="control-option" data-sort="drinkability">Drinkability</button>
+                    <button class="control-option" data-sort="price_asc">Price (low → high)</button>
+                    <button class="control-option" data-sort="price_desc">Price (high → low)</button>
                 </div>
 
                 <!-- Filter Dropdown -->
                 <div id="filterDropdown" class="control-dropdown hidden">
                     <div class="filter-section">
                         <h4>Type</h4>
-                        <button class="control-option active" data-filter="type" data-value="all">Alles</button>
+                        <button class="control-option active" data-filter="type" data-value="all">All</button>
                         <button class="control-option" data-filter="type" data-value="red">Red</button>
                         <button class="control-option" data-filter="type" data-value="white">White</button>
                         <button class="control-option" data-filter="type" data-value="rosé">Rosé</button>
@@ -153,10 +155,10 @@
                         <button class="control-option" data-filter="type" data-value="dessert">Dessert</button>
                     </div>
                     <div class="filter-section">
-                        <h4>Dronk status</h4>
-                        <button class="control-option" data-filter="drinkability" data-value="all">Alles</button>
-                        <button class="control-option" data-filter="drinkability" data-value="perfect">Op dronk</button>
-                        <button class="control-option" data-filter="drinkability" data-value="soon">Binnenkort</button>
+                        <h4>Drink status</h4>
+                        <button class="control-option" data-filter="drinkability" data-value="all">All</button>
+                        <button class="control-option" data-filter="drinkability" data-value="perfect">Drink now</button>
+                        <button class="control-option" data-filter="drinkability" data-value="soon">Drink soon</button>
                     </div>
                     <div class="filter-section hidden" id="grapeFilterSection"></div>
                 </div>
@@ -210,8 +212,8 @@
                     <div class="settings-section" id="authSection">
                         <h3>Account & Cloud Sync</h3>
                         <p class="settings-description">
-                            Je wijnkelder wordt gesynchroniseerd met je Google account.<br>
-                            Al je wijnen zijn beschikbaar op al je apparaten.
+                            Your wine cellar is synced with your Google account.<br>
+                            All your wines are available across all your devices.
                         </p>
 
                         <div class="api-key-status" id="userInfo" style="display: none; color: var(--system-green);">
@@ -228,7 +230,7 @@
                         </button>
 
                         <button id="signOutBtn" class="clear-key-btn" style="display: none;">
-                            Uitloggen
+                            Sign out
                         </button>
 
                         <div class="api-key-status" id="firebaseSyncStatus" style="margin-top: 12px;">
@@ -239,20 +241,20 @@
                     <div class="settings-section">
                         <h3>AI Wijnherkenning</h3>
                         <div class="api-key-status" id="aiStatus">
-                            <span class="status-connected">✓ Automatische labelherkenning actief</span>
+                            <span class="status-connected">✓ Automatic label recognition active</span>
                         </div>
                         <p class="settings-description">
-                            Maak een foto van een wijnetiket en de app herkent automatisch de wijn,
-                            druivensoort, regio, en geeft proefnotities.
+                            Take a photo of a wine label and the app automatically recognizes the wine,
+                            grape variety, region, and provides tasting notes.
                         </p>
                     </div>
 
                     <div class="settings-section">
                         <h3>Over The Cork</h3>
                         <p class="settings-description">
-                            The Cork gebruikt GPT-4 Vision om wijnetiketten te lezen en automatisch
-                            wijnkenmerken, proefnotities en prijsinformatie op te halen.<br><br>
-                            Versie 2.0 - Nu met cloud sync en archief functie.
+                            The Cork uses AI vision to read wine labels and automatically
+                            retrieve wine characteristics, tasting notes, and price information.<br><br>
+                            Version 2.0 - Now with cloud sync and archive.
                         </p>
                     </div>
                 </div>
@@ -541,7 +543,7 @@
                     <p class="archive-wine-name" id="archiveWineName">Wine Name</p>
 
                     <div class="archive-section">
-                        <label>Hoe vond je deze wijn?</label>
+                        <label>How did you like this wine?</label>
                         <div class="star-rating" id="archiveRating">
                             <span class="star" data-rating="1">★</span>
                             <span class="star" data-rating="2">★</span>
@@ -549,35 +551,35 @@
                             <span class="star" data-rating="4">★</span>
                             <span class="star" data-rating="5">★</span>
                         </div>
-                        <span class="rating-label" id="ratingLabel">Selecteer een beoordeling</span>
+                        <span class="rating-label" id="ratingLabel">Select a rating</span>
                     </div>
 
                     <div class="archive-section">
-                        <label>Zou je deze wijn opnieuw kopen?</label>
+                        <label>Would you buy this wine again?</label>
                         <div class="rebuy-options" id="rebuyOptions">
                             <button type="button" class="rebuy-btn" data-rebuy="yes">
                                 <span class="rebuy-icon">👍</span>
-                                <span>Ja!</span>
+                                <span>Yes!</span>
                             </button>
                             <button type="button" class="rebuy-btn" data-rebuy="maybe">
                                 <span class="rebuy-icon">🤔</span>
-                                <span>Misschien</span>
+                                <span>Maybe</span>
                             </button>
                             <button type="button" class="rebuy-btn" data-rebuy="no">
                                 <span class="rebuy-icon">👎</span>
-                                <span>Nee</span>
+                                <span>No</span>
                             </button>
                         </div>
                     </div>
 
                     <div class="archive-section">
-                        <label for="archiveNotes">Notities (optioneel)</label>
-                        <textarea id="archiveNotes" rows="2" placeholder="Je ervaring met deze wijn..."></textarea>
+                        <label for="archiveNotes">Notes (optional)</label>
+                        <textarea id="archiveNotes" rows="2" placeholder="Your experience with this wine..."></textarea>
                     </div>
 
                     <div class="archive-actions">
-                        <button type="button" class="skip-archive-btn" id="skipArchive">Alleen verwijderen</button>
-                        <button type="button" class="confirm-archive-btn" id="confirmArchive">Archiveren</button>
+                        <button type="button" class="skip-archive-btn" id="skipArchive">Just delete</button>
+                        <button type="button" class="confirm-archive-btn" id="confirmArchive">Archive</button>
                     </div>
                 </div>
             </div>
@@ -616,31 +618,31 @@
                     <!-- Archive Filters -->
                     <div class="archive-filters">
                         <select id="archiveTypeFilter" class="archive-filter-select">
-                            <option value="">Alle types</option>
-                            <option value="red">Rood</option>
-                            <option value="white">Wit</option>
+                            <option value="">All types</option>
+                            <option value="red">Red</option>
+                            <option value="white">White</option>
                             <option value="rosé">Rosé</option>
                             <option value="sparkling">Sparkling</option>
                             <option value="dessert">Dessert</option>
                         </select>
                         <select id="archiveRebuyFilter" class="archive-filter-select">
-                            <option value="">Alle beoordelingen</option>
-                            <option value="yes">Opnieuw kopen</option>
-                            <option value="maybe">Misschien</option>
-                            <option value="no">Niet opnieuw</option>
+                            <option value="">All ratings</option>
+                            <option value="yes">Rebuy</option>
+                            <option value="maybe">Maybe</option>
+                            <option value="no">Don't rebuy</option>
                         </select>
                     </div>
 
                     <!-- Archive Stats -->
                     <div class="archive-stats" id="archiveStats">
-                        <span id="archiveCount">0 wijnen</span>
+                        <span id="archiveCount">0 wines</span>
                     </div>
 
                     <!-- Archive Empty State -->
                     <div id="archiveEmptyState" class="archive-empty-state">
                         <span class="archive-empty-icon">📚</span>
-                        <p>Je archief is leeg</p>
-                        <span class="archive-empty-hint">Verwijderde wijnen met een beoordeling verschijnen hier</span>
+                        <p>Your archive is empty</p>
+                        <span class="archive-empty-hint">Deleted wines with a rating will appear here</span>
                     </div>
 
                     <!-- Archive List -->
@@ -677,7 +679,7 @@
                         <div class="rating-stars" id="archiveDetailStars">★★★★★</div>
                         <div class="rebuy-badge" id="archiveDetailRebuy">
                             <span class="rebuy-icon">👍</span>
-                            <span>Opnieuw kopen</span>
+                            <span>Rebuy</span>
                         </div>
                     </div>
 
@@ -729,8 +731,8 @@
                     </div>
 
                     <div class="detail-actions">
-                        <button id="restoreWineBtn" class="detail-action-btn detail-btn-edit">Terugzetten</button>
-                        <button id="deleteArchiveBtn" class="detail-action-btn detail-btn-delete">Verwijderen</button>
+                        <button id="restoreWineBtn" class="detail-action-btn detail-btn-edit">Restore</button>
+                        <button id="deleteArchiveBtn" class="detail-action-btn detail-btn-delete">Delete</button>
                     </div>
                 </div>
             </div>
@@ -759,7 +761,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-    <script src="config.js?v=43"></script>
-    <script src="app.js?v=43"></script>
+    <script src="config.js?v=44"></script>
+    <script src="app.js?v=44"></script>
 </body>
 </html>
