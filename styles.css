@@ -186,20 +186,28 @@ body {
 
 /* Sync Status Indicator */
 .sync-status {
-    font-size: 10px;
-    padding: 3px 6px;
-    border-radius: 100px;
+    display: flex;
+    align-items: center;
     margin-left: var(--space-4);
-    white-space: nowrap;
+}
+
+.sync-status span {
+    display: flex;
+    align-items: center;
+}
+
+.sync-status svg {
+    display: block;
 }
 
 .sync-status .status-local {
-    color: var(--label-tertiary);
+    color: var(--label-quaternary);
 }
 
 .sync-status .status-connecting,
 .sync-status .status-syncing {
     color: var(--system-orange);
+    animation: pulse-sync 1.2s ease-in-out infinite;
 }
 
 .sync-status .status-synced {
@@ -211,7 +219,12 @@ body {
 }
 
 .sync-status .status-disconnected {
-    color: var(--label-tertiary);
+    color: var(--label-quaternary);
+}
+
+@keyframes pulse-sync {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }
 
 /* Header Icon Buttons - 44pt touch target */
