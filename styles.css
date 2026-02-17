@@ -2099,6 +2099,7 @@ body {
     border-color: var(--wine-primary);
 }
 
+.year-pick-nv,
 .year-pick-other {
     grid-column: 1 / -1;
     background: var(--bg-tertiary);

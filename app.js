@@ -1411,11 +1411,12 @@ class WineCellar {
             const currentYear = new Date().getFullYear();
             const buttonsContainer = modal.querySelector('.year-picker-buttons');
 
-            // Generate year buttons: last 10 years + "Overig"
+            // Generate year buttons: last 10 years + "Sans Année" + "Overig"
             let html = '';
             for (let y = currentYear; y >= currentYear - 9; y--) {
                 html += `<button class="year-pick-btn" data-year="${y}">${y}</button>`;
             }
+            html += `<button class="year-pick-btn year-pick-nv" data-year="NV">Sans Année</button>`;
             html += `<button class="year-pick-btn year-pick-other">Overig</button>`;
             buttonsContainer.innerHTML = html;
 
@@ -1459,7 +1460,8 @@ class WineCellar {
                         }
                     });
                 } else {
-                    const year = parseInt(btn.dataset.year);
+                    const raw = btn.dataset.year;
+                    const year = raw === 'NV' ? 'NV' : parseInt(raw);
                     cleanup();
                     resolve(year);
                 }
