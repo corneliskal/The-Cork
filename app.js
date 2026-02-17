@@ -2748,15 +2748,15 @@ class WineCellar {
             const yearsToWait = drinkFrom - currentYear;
             return {
                 status: 'early',
-                label: yearsToWait === 1 ? 'Nog 1 jaar' : `Nog ${yearsToWait} jaar`,
+                label: yearsToWait === 1 ? '1 year to go' : `${yearsToWait} years to go`,
                 class: 'status-early'
             };
         } else if (currentYear > drinkUntil) {
-            return { status: 'past', label: 'Voorbij optimum', class: 'status-past' };
+            return { status: 'past', label: 'Past peak', class: 'status-past' };
         } else if (currentYear >= drinkUntil - 1) {
-            return { status: 'soon', label: 'Binnenkort drinken', class: 'status-soon' };
+            return { status: 'soon', label: 'Drink soon', class: 'status-soon' };
         } else {
-            return { status: 'perfect', label: 'Nu perfect', class: 'status-perfect' };
+            return { status: 'perfect', label: 'Drink now', class: 'status-perfect' };
         }
     }
 
