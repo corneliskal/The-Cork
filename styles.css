@@ -140,12 +140,12 @@ body {
 .logo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     height: 44px;
 }
 
 .logo-icon {
-    height: 32px;
+    height: 28px;
     width: auto;
 }
 
@@ -168,27 +168,29 @@ body {
     font-family: 'Nunito Sans', 'Outfit', sans-serif;
     font-weight: 400;
     font-size: 0.4rem;
-    letter-spacing: 3.6px;
+    letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--label-secondary);
     opacity: 0.55;
 }
 
 .header-stats {
-    font-size: var(--font-footnote);
+    font-size: 11px;
     font-weight: 500;
     color: var(--label-secondary);
     background: rgba(60, 60, 67, 0.08);
-    padding: 6px 12px;
+    padding: 4px 10px;
     border-radius: 100px;
+    white-space: nowrap;
 }
 
 /* Sync Status Indicator */
 .sync-status {
-    font-size: var(--font-caption2);
-    padding: 4px 8px;
+    font-size: 10px;
+    padding: 3px 6px;
     border-radius: 100px;
-    margin-left: var(--space-8);
+    margin-left: var(--space-4);
+    white-space: nowrap;
 }
 
 .sync-status .status-local {
@@ -214,7 +216,7 @@ body {
 
 /* Header Icon Buttons - 44pt touch target */
 .header-icon-btn {
-    width: 44px;
+    width: 36px;
     height: 44px;
     border-radius: 50%;
     border: none;
