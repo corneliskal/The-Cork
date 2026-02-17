@@ -146,7 +146,7 @@ body {
 
 .logo-icon {
     height: 32px;
-    width: 32px;
+    width: auto;
 }
 
 .logo-text {
@@ -155,20 +155,20 @@ body {
 }
 
 .logo-title {
-    font-family: 'Outfit', 'Playfair Display', sans-serif;
-    font-weight: 600;
+    font-family: 'Nunito Sans', 'Outfit', sans-serif;
+    font-weight: 700;
     font-size: 1rem;
-    letter-spacing: 0.06em;
+    letter-spacing: -0.5px;
     text-transform: uppercase;
     color: var(--label-primary);
     line-height: 1.1;
 }
 
 .logo-subtitle {
-    font-family: 'Outfit', 'Inter', sans-serif;
+    font-family: 'Nunito Sans', 'Outfit', sans-serif;
     font-weight: 400;
     font-size: 0.4rem;
-    letter-spacing: 0.12em;
+    letter-spacing: 3.6px;
     text-transform: uppercase;
     color: var(--label-secondary);
     opacity: 0.55;
@@ -521,8 +521,8 @@ body {
 }
 
 .empty-illustration .empty-logo {
-    width: 280px;
-    height: auto;
+    width: auto;
+    height: 200px;
     opacity: 0.8;
 }
 
@@ -2422,7 +2422,7 @@ body {
 }
 
 .login-logo {
-    width: 100px;
+    width: auto;
     height: 100px;
     margin-bottom: var(--space-24);
 }
