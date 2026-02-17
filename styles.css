@@ -135,6 +135,7 @@ body {
     padding: 0 var(--space-16);
     max-width: 600px;
     margin: 0 auto;
+    position: relative;
 }
 
 .logo {
@@ -175,6 +176,9 @@ body {
 }
 
 .header-stats {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 5px;
@@ -225,6 +229,12 @@ body {
     50% { opacity: 0.3; }
 }
 
+/* Header right-side action buttons */
+.header-actions {
+    display: flex;
+    align-items: center;
+}
+
 /* Header Icon Buttons - 44pt touch target */
 .header-icon-btn {
     width: 36px;
@@ -237,10 +247,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.header-icon-btn:first-of-type {
-    margin-left: auto;
 }
 
 .header-icon-btn svg {
