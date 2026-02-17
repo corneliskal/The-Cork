@@ -1416,7 +1416,7 @@ class WineCellar {
             for (let y = currentYear; y >= currentYear - 9; y--) {
                 html += `<button class="year-pick-btn" data-year="${y}">${y}</button>`;
             }
-            html += `<button class="year-pick-btn year-pick-nv" data-year="NV">Sans Année</button>`;
+            html += `<button class="year-pick-btn year-pick-nv" data-year="NV">Non Vintage</button>`;
             html += `<button class="year-pick-btn year-pick-other">Overig</button>`;
             buttonsContainer.innerHTML = html;
 
