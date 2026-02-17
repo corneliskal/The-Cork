@@ -175,6 +175,9 @@ body {
 }
 
 .header-stats {
+    display: flex;
+    align-items: center;
+    gap: 5px;
     font-size: 11px;
     font-weight: 500;
     color: var(--label-secondary);
@@ -184,41 +187,36 @@ body {
     white-space: nowrap;
 }
 
-/* Sync Status Indicator */
-.sync-status {
+/* Sync Status Icon (inside header-stats) */
+.sync-icon {
     display: flex;
     align-items: center;
-    margin-left: var(--space-4);
+    line-height: 0;
 }
 
-.sync-status span {
-    display: flex;
-    align-items: center;
-}
-
-.sync-status svg {
+.sync-icon svg {
     display: block;
 }
 
-.sync-status .status-local {
+.sync-icon.status-local {
     color: var(--label-quaternary);
 }
 
-.sync-status .status-connecting,
-.sync-status .status-syncing {
+.sync-icon.status-connecting,
+.sync-icon.status-syncing {
     color: var(--system-orange);
     animation: pulse-sync 1.2s ease-in-out infinite;
 }
 
-.sync-status .status-synced {
+.sync-icon.status-synced {
     color: var(--system-green);
 }
 
-.sync-status .status-error {
+.sync-icon.status-error {
     color: var(--system-red);
 }
 
-.sync-status .status-disconnected {
+.sync-icon.status-disconnected {
     color: var(--label-quaternary);
 }
 

@@ -652,8 +652,8 @@ class WineCellar {
         const statusEl = document.getElementById('syncStatus');
         const settingsStatusEl = document.getElementById('firebaseSyncStatus');
 
-        const cloudSvg = `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>`;
-        const cloudOffSvg = `<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46A5.47 5.47 0 0 1 12 6a5.5 5.5 0 0 1 5.5 5.5v.5H19a3 3 0 0 1 3 3c0 1.13-.64 2.11-1.56 2.62l1.45 1.45C23.16 18.16 24 16.68 24 15c0-2.64-2.05-4.78-4.65-4.96zM3 5.27l2.75 2.74C2.56 8.15 0 10.77 0 14c0 3.31 2.69 6 6 6h11.73l2 2 1.27-1.27L4.27 4 3 5.27zM7.73 10l8 8H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h1.73z"/></svg>`;
+        const cloudSvg = `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>`;
+        const cloudOffSvg = `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46A5.47 5.47 0 0 1 12 6a5.5 5.5 0 0 1 5.5 5.5v.5H19a3 3 0 0 1 3 3c0 1.13-.64 2.11-1.56 2.62l1.45 1.45C23.16 18.16 24 16.68 24 15c0-2.64-2.05-4.78-4.65-4.96zM3 5.27l2.75 2.74C2.56 8.15 0 10.77 0 14c0 3.31 2.69 6 6 6h11.73l2 2 1.27-1.27L4.27 4 3 5.27zM7.73 10l8 8H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h1.73z"/></svg>`;
 
         const statusMap = {
             'local': { icon: cloudOffSvg, class: 'status-local', settingsText: 'Niet geconfigureerd - Data wordt alleen lokaal opgeslagen' },
@@ -667,7 +667,8 @@ class WineCellar {
         const s = statusMap[status] || statusMap['local'];
 
         if (statusEl) {
-            statusEl.innerHTML = `<span class="${s.class}">${s.icon}</span>`;
+            statusEl.className = `sync-icon ${s.class}`;
+            statusEl.innerHTML = s.icon;
         }
 
         if (settingsStatusEl) {
