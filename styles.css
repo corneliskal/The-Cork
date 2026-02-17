@@ -1483,12 +1483,9 @@ body {
 .detail-drink-icon {
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, #e8d5a3, #dbb978);
-    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
     flex-shrink: 0;
 }
 
