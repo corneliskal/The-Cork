@@ -539,10 +539,37 @@ body {
     margin-bottom: var(--space-24);
 }
 
+.empty-stacked-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
 .empty-illustration .empty-logo {
     width: auto;
-    height: 200px;
-    opacity: 0.8;
+    height: 140px;
+    opacity: 0.15;
+}
+
+.empty-logo-title {
+    font-family: 'Nunito Sans', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    color: var(--label-primary);
+    opacity: 0.15;
+}
+
+.empty-logo-tagline {
+    font-family: 'Nunito Sans', sans-serif;
+    font-weight: 400;
+    font-size: 10px;
+    letter-spacing: 3.6px;
+    text-transform: uppercase;
+    color: var(--label-secondary);
+    opacity: 0.12;
 }
 
 .empty-state h2 {
@@ -2438,10 +2465,36 @@ body {
     max-width: 360px;
 }
 
+.login-stacked-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: var(--space-24);
+}
+
 .login-logo {
     width: auto;
-    height: 100px;
-    margin-bottom: var(--space-24);
+    height: 80px;
+}
+
+.login-logo-title {
+    font-family: 'Nunito Sans', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    color: var(--label-primary);
+}
+
+.login-logo-tagline {
+    font-family: 'Nunito Sans', sans-serif;
+    font-weight: 400;
+    font-size: 10px;
+    letter-spacing: 3.6px;
+    text-transform: uppercase;
+    color: var(--label-secondary);
+    opacity: 0.55;
 }
 
 .login-content h1 {
