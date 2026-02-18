@@ -695,13 +695,6 @@ body {
     color: var(--label-secondary);
 }
 
-.wine-card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: var(--space-4);
-}
-
 .wine-type-tag {
     font-size: var(--font-caption2);
     font-weight: 600;
@@ -2789,31 +2782,39 @@ body {
    ============================ */
 
 .wine-card-footer {
-    display: flex;
+    display: grid;
+    grid-template-columns: 72px 1fr 1fr 1fr;
     align-items: center;
-    flex-wrap: wrap;
-    gap: var(--space-8);
+    gap: 6px;
     margin-top: var(--space-4);
 }
 
 .wine-quantity-badge {
     font-size: var(--font-caption2);
     font-weight: 600;
-    padding: 2px 6px;
     border-radius: 4px;
-    background: rgba(114, 47, 55, 0.12);
     color: var(--wine-primary);
     display: inline-flex;
     align-items: center;
+    justify-self: center;
+}
+
+.wine-quantity-badge:not(:empty) {
+    padding: 2px 6px;
+    background: rgba(114, 47, 55, 0.12);
 }
 
 .wine-price-tag {
     font-size: var(--font-caption2);
     font-weight: 600;
-    padding: 2px 6px;
     border-radius: 4px;
-    background: rgba(0, 122, 255, 0.12);
     color: var(--system-blue);
+    justify-self: center;
+}
+
+.wine-price-tag:not(:empty) {
+    padding: 2px 6px;
+    background: rgba(0, 122, 255, 0.12);
 }
 
 .wine-drink-status {
@@ -2821,6 +2822,7 @@ body {
     font-weight: 600;
     padding: 2px 6px;
     border-radius: 4px;
+    justify-self: end;
 }
 
 .wine-drink-status.status-perfect {
