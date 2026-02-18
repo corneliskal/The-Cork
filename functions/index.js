@@ -475,18 +475,17 @@ exports.deepAnalyzeWineLabel = functions.https.onRequest(async (req, res) => {
 
         const searchTerms = [name, producer, year, grape, region].filter(Boolean).join(' ');
 
-        const prompt = `Search for this wine and provide complete, accurate information: "${searchTerms}"
+        const prompt = `Search for this specific wine and provide expert-verified information: "${searchTerms}"
 
-Use web search to find:
-1. Correct wine name and producer
-2. Vintage year
-3. Grape variety/varieties
-4. Region and country
-5. Wine type (red/white/rosé/sparkling/dessert)
-6. Wine characteristics and tasting notes
-7. Optimal drinking window
+INSTRUCTIONS:
+1. Conduct a deep web search for current professional reviews (e.g., Robert Parker/Wine Advocate, Antonio Galloni/Vinous, Jancis Robinson, James Suckling).
+2. Extract the specific 'drinking window' or 'maturity' dates mentioned by these experts for this EXACT vintage.
+3. If experts disagree on the window, provide a conservative range (latest 'drinkFrom' and earliest 'drinkUntil').
+4. Calculate 'boldness', 'tannins', and 'acidity' based on the technical sheet or professional tasting notes.
+5. If the wine is 'NV' (Non-Vintage), use the most recent disgorgement or release data available.
+6. If no professional reviews exist for this wine, omit expert_ratings entirely and estimate characteristics based on grape, region and vintage.
 
-Return JSON with complete wine information:
+Return ONLY a JSON object with this structure:
 {
     "name": "wine name (the official wine name only, without the producer name)",
     "producer": "producer/house name (château, domaine, winery or estate name - never use legal entity names like Société Civile, S.A., M.L.P., SRL, GmbH etc.)",
@@ -494,17 +493,21 @@ Return JSON with complete wine information:
     "region": "region, country",
     "grape": "grape variety/varieties",
     "type": "red/white/rosé/sparkling/dessert",
+    "expert_ratings": [
+        {"source": "reviewer name", "score": "score as string", "window": "drink window as stated"}
+    ],
     "characteristics": {
         "boldness": 1-5,
         "tannins": 1-5,
-        "acidity": 1-5
+        "acidity": 1-5,
+        "alcohol_pct": "alcohol percentage as string e.g. 13.5%"
     },
-    "notes": "tasting notes or description",
-    "drinkFrom": year as number (estimated optimal drinking window start),
-    "drinkUntil": year as number (estimated optimal drinking window end)
+    "notes": "concise summary of flavor profile",
+    "drinkFrom": year as number (optimal drinking window start),
+    "drinkUntil": year as number (optimal drinking window end)
 }
 
-If you cannot find the wine, return the best match you can find with the provided information.
+If no professional reviews exist, omit the expert_ratings field entirely.
 Only respond with JSON, no other text.`;
 
         const result = await model.generateContent(prompt);

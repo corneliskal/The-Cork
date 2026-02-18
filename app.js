@@ -1294,10 +1294,14 @@ class WineCellar {
                     if (deepData.characteristics.boldness) updates.boldness = deepData.characteristics.boldness;
                     if (deepData.characteristics.tannins) updates.tannins = deepData.characteristics.tannins;
                     if (deepData.characteristics.acidity) updates.acidity = deepData.characteristics.acidity;
+                    if (deepData.characteristics.alcohol_pct) updates.alcohol = deepData.characteristics.alcohol_pct;
                 }
                 if (deepData.notes) updates.notes = deepData.notes;
                 if (deepData.drinkFrom) updates.drinkFrom = deepData.drinkFrom;
                 if (deepData.drinkUntil) updates.drinkUntil = deepData.drinkUntil;
+                if (deepData.expert_ratings && deepData.expert_ratings.length > 0) {
+                    updates.expertRatings = deepData.expert_ratings;
+                }
 
                 if (Object.keys(updates).length > 0) {
                     console.log('📝 Deep analysis klaar (achtergrond):', Object.keys(updates).join(', '));
@@ -2221,7 +2225,27 @@ class WineCellar {
         // Facts row
         document.getElementById('detailYear').textContent = wine.year || '—';
         document.getElementById('detailGrape').textContent = wine.grape || '—';
-        document.getElementById('detailPrice').textContent = wine.price ? `€${wine.price.toFixed(2)}` : '—';
+        document.getElementById('detailPrice').textContent = wine.price ? `€${Math.round(wine.price)}` : '—';
+
+        // Alcohol
+        const alcoholFact = document.getElementById('detailAlcoholFact');
+        if (wine.alcohol) {
+            alcoholFact.style.display = '';
+            document.getElementById('detailAlcohol').textContent = wine.alcohol;
+        } else {
+            alcoholFact.style.display = 'none';
+        }
+
+        // Expert ratings
+        const expertSection = document.getElementById('detailExpertSection');
+        if (wine.expertRatings && wine.expertRatings.length > 0) {
+            expertSection.style.display = '';
+            document.getElementById('detailExpertRatings').innerHTML = wine.expertRatings
+                .map(r => `<div class="detail-expert-row"><span class="detail-expert-source">${r.source}</span><span class="detail-expert-score">${r.score}</span></div>`)
+                .join('');
+        } else {
+            expertSection.style.display = 'none';
+        }
 
         // Profile bars
         document.getElementById('detailBoldness').style.width = `${wine.boldness * 20}%`;
@@ -2749,7 +2773,7 @@ class WineCellar {
         // Meta info
         document.getElementById('archiveDetailYear').textContent = wine.year || '—';
         document.getElementById('archiveDetailGrape').textContent = wine.grape || '—';
-        document.getElementById('archiveDetailPrice').textContent = wine.price ? `€${wine.price.toFixed(2)}` : '—';
+        document.getElementById('archiveDetailPrice').textContent = wine.price ? `€${Math.round(wine.price)}` : '—';
 
         // Store
         const storeSection = document.getElementById('archiveDetailStoreSection');

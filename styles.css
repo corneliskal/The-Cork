@@ -1574,6 +1574,38 @@ body {
     font-weight: 500;
 }
 
+/* Expert Ratings */
+.detail-expert-section {
+    padding: 16px 0;
+    border-bottom: 1px solid #f0ece7;
+}
+
+.detail-expert-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #b5a898;
+    margin-bottom: 10px;
+}
+
+.detail-expert-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.detail-expert-source {
+    font-size: 13px;
+    color: #6b5a4e;
+}
+
+.detail-expert-score {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--wine-primary);
+}
+
 /* Profile Bars */
 .detail-profile-section {
     padding: 16px 0;
