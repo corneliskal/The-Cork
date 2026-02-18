@@ -1017,6 +1017,59 @@ body {
 }
 
 /* ============================
+   Destination Tiles (Add Wine)
+   ============================ */
+
+.add-step.hidden {
+    display: none;
+}
+
+.destination-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: var(--space-8) 0 var(--space-16);
+}
+
+.destination-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 32px 16px;
+    border: 2px solid var(--separator-opaque);
+    border-radius: 16px;
+    background: var(--bg-secondary);
+    min-height: 160px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.destination-tile:active {
+    transform: scale(0.97);
+    border-color: var(--wine-primary);
+    background: rgba(114, 47, 55, 0.06);
+}
+
+.destination-tile svg {
+    width: 48px;
+    height: 48px;
+    color: var(--wine-primary);
+}
+
+.tile-label {
+    font-size: var(--font-title3);
+    font-weight: 600;
+    color: var(--label-primary);
+}
+
+.tile-hint {
+    font-size: var(--font-footnote);
+    color: var(--label-secondary);
+}
+
+/* ============================
    Upload Section
    ============================ */
 

@@ -211,6 +211,8 @@ class WineCellar {
         this.filteredWines = [];
         this.archive = [];
         this.filteredArchive = [];
+        this.wishlist = [];
+        this.addDestination = null; // 'cellar' or 'wishlist'
         this.currentWineId = null;
         this.currentArchiveId = null;
         this.editMode = false;
@@ -468,15 +470,17 @@ class WineCellar {
             if (this.db && this.userId) {
                 this.db.ref(`users/${this.userId}/wines`).off();
                 this.db.ref(`users/${this.userId}/archive`).off();
+                this.db.ref(`users/${this.userId}/wishlist`).off();
             }
             await firebase.auth().signOut();
             this.firebaseEnabled = false;
             this.userId = null;
             this.wines = [];
             this.archive = [];
+            this.wishlist = [];
             this.renderWineList();
             this.updateStats();
-            this.showToast('Uitgelogd');
+            this.showToast('Signed out');
             this.updateSyncStatus('disconnected');
             this.showAppContent(false);
         } catch (error) {
@@ -531,6 +535,7 @@ class WineCellar {
         // Detach any existing listeners first
         this.db.ref(`users/${this.userId}/wines`).off();
         this.db.ref(`users/${this.userId}/archive`).off();
+        this.db.ref(`users/${this.userId}/wishlist`).off();
 
         // Wines listener
         const winesRef = this.db.ref(`users/${this.userId}/wines`);
@@ -572,6 +577,17 @@ class WineCellar {
 
             this.archive = firebaseArchive;
             this.archive.sort((a, b) => new Date(b.archivedAt) - new Date(a.archivedAt));
+        });
+
+        // Wishlist listener
+        const wishlistRef = this.db.ref(`users/${this.userId}/wishlist`);
+        wishlistRef.on('value', (snapshot) => {
+            if (this.syncInProgress) return;
+
+            const data = snapshot.val();
+            this.wishlist = data ? Object.values(data) : [];
+            this.wishlist.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
+            console.log('💝 Wishlist synced from cloud:', this.wishlist.length, 'items');
         });
 
         // One-time migration of base64 images to Storage (after initial data load)
@@ -937,23 +953,29 @@ class WineCellar {
             });
         });
 
-        // Image upload
+        // Destination tiles (add wine flow)
+        document.querySelectorAll('.destination-tile').forEach(tile => {
+            tile.addEventListener('click', () => {
+                this.addDestination = tile.dataset.destination;
+                document.getElementById('addPhotoInput')?.click();
+            });
+        });
+
+        // Photo input for add flow
+        document.getElementById('addPhotoInput')?.addEventListener('change', (e) => this.handleImageUpload(e));
+
+        // Edit mode: image preview click + photo input
         document.getElementById('imagePreview')?.addEventListener('click', () => {
-            document.getElementById('galleryInput')?.click();
+            document.getElementById('editPhotoInput')?.click();
         });
+        document.getElementById('editPhotoInput')?.addEventListener('change', (e) => this.handleEditImageUpload(e));
 
-        document.getElementById('cameraBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('cameraInput')?.click();
-        });
+        // Wishlist header button
+        document.getElementById('wishlistBtn')?.addEventListener('click', () => this.openWishlistModal());
 
-        document.getElementById('galleryBtn')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('galleryInput')?.click();
-        });
-
-        document.getElementById('cameraInput')?.addEventListener('change', (e) => this.handleImageUpload(e));
-        document.getElementById('galleryInput')?.addEventListener('change', (e) => this.handleImageUpload(e));
+        // Wishlist detail actions
+        document.getElementById('moveWishlistToCellarBtn')?.addEventListener('click', () => this.moveWishlistToCellar());
+        document.getElementById('deleteWishlistBtn')?.addEventListener('click', () => this.deleteFromWishlistConfirm());
 
         // Form submission
         document.getElementById('wineForm')?.addEventListener('submit', (e) => this.handleFormSubmit(e));
@@ -1082,15 +1104,19 @@ class WineCellar {
 
         if (modalId === 'addModal') {
             this.resetForm();
+            this.addDestination = null;
         }
     }
 
     openAddModal() {
         this.editMode = false;
         this.currentWineId = null;
+        this.addDestination = null;
         this.resetForm();
-        document.querySelector('#addModal .modal-header h2').textContent = 'Add Wine';
-        document.querySelector('#addModal .submit-btn').textContent = 'Add to Cellar';
+        document.getElementById('addModalTitle').textContent = 'Add Wine';
+        // Show destination tiles, hide edit form
+        document.getElementById('addDestinationStep')?.classList.remove('hidden');
+        document.getElementById('addStepEdit')?.classList.add('hidden');
         this.openModal('addModal');
     }
 
@@ -1119,14 +1145,25 @@ class WineCellar {
         const file = e.target.files[0];
         if (!file) return;
 
+        // Hide tiles, show scanning indicator
+        document.getElementById('addDestinationStep')?.classList.add('hidden');
+
         this.compressImage(file, (compressedImageData) => {
             this.currentImage = compressedImageData;
-
-            const preview = document.getElementById('previewImg');
-            preview.src = compressedImageData;
-            document.getElementById('imagePreview').classList.add('has-image');
-
             this.analyzeWineLabel(compressedImageData);
+        });
+
+        e.target.value = '';
+    }
+
+    handleEditImageUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        this.compressImage(file, (compressedImageData) => {
+            this.currentImage = compressedImageData;
+            document.getElementById('previewImg').src = compressedImageData;
+            document.getElementById('imagePreview').classList.add('has-image');
         });
 
         e.target.value = '';
@@ -1185,7 +1222,7 @@ class WineCellar {
             return;
         }
 
-        indicatorText.textContent = 'Wijn analyseren met AI...';
+        indicatorText.textContent = 'Analyzing wine label...';
 
         try {
             const wineData = await this.callChatGPTVision(imageData);
@@ -1226,12 +1263,19 @@ class WineCellar {
                 addedAt: new Date().toISOString()
             };
 
-            this.wines.unshift(savedWine);
-            this.saveWines();
-            this.renderWineList();
-            this.updateStats();
-            this.closeModal('addModal');
-            this.showToast('Wine recognized and saved!');
+            if (this.addDestination === 'wishlist') {
+                this.wishlist.unshift(savedWine);
+                this.saveWishlist();
+                this.closeModal('addModal');
+                this.showToast('Wine added to wishlist!');
+            } else {
+                this.wines.unshift(savedWine);
+                this.saveWines();
+                this.renderWineList();
+                this.updateStats();
+                this.closeModal('addModal');
+                this.showToast('Wine recognized and saved!');
+            }
 
             // Upload label image to Storage in background
             if (this.isBase64Image(savedWine.image)) {
@@ -1340,13 +1384,25 @@ class WineCellar {
     }
 
     updateSavedWine(enrichId, updates) {
-        // Zoek wijn met dit enrichId
-        const wine = this.wines.find(w => w.enrichId === enrichId);
+        // Search in wines first, then wishlist
+        let wine = this.wines.find(w => w.enrichId === enrichId);
+        let collection = 'wines';
+
+        if (!wine) {
+            wine = this.wishlist.find(w => w.enrichId === enrichId);
+            collection = 'wishlist';
+        }
+
         if (!wine) return;
 
         Object.assign(wine, updates);
-        this.saveWines();
-        this.renderWineList();
+
+        if (collection === 'wines') {
+            this.saveWines();
+            this.renderWineList();
+        } else {
+            this.saveWishlist();
+        }
     }
 
     checkEnrichmentDone(enrichId) {
@@ -2324,8 +2380,12 @@ class WineCellar {
 
         setTimeout(() => {
             this.editMode = true;
-            document.querySelector('#addModal .modal-header h2').textContent = 'Edit Wine';
-            document.querySelector('#addModal .submit-btn').textContent = 'Save Changes';
+            this.resetForm();
+
+            // Hide tiles, show edit form
+            document.getElementById('addDestinationStep')?.classList.add('hidden');
+            document.getElementById('addStepEdit')?.classList.remove('hidden');
+            document.getElementById('addModalTitle').textContent = 'Edit Wine';
 
             document.getElementById('wineName').value = wine.name;
             document.getElementById('wineProducer').value = wine.producer || '';
@@ -2873,6 +2933,142 @@ class WineCellar {
 
         this.closeModal('archiveDetailModal');
         this.showToast('Wine deleted from archive');
+    }
+
+    // ============================
+    // Wishlist
+    // ============================
+
+    saveWishlist() {
+        if (this.firebaseEnabled && this.db && this.userId) {
+            const wishlistObject = {};
+            this.wishlist.forEach(wine => {
+                wishlistObject[wine.id] = wine;
+            });
+            this.db.ref(`users/${this.userId}/wishlist`).set(wishlistObject)
+                .catch(err => console.error('Error saving wishlist:', err));
+        }
+    }
+
+    openWishlistModal() {
+        this.renderWishlist();
+        this.openModal('wishlistModal');
+    }
+
+    renderWishlist() {
+        const list = document.getElementById('wishlistList');
+        const empty = document.getElementById('wishlistEmptyState');
+
+        if (this.wishlist.length === 0) {
+            empty?.classList.remove('hidden');
+            if (list) list.innerHTML = '';
+            return;
+        }
+
+        empty?.classList.add('hidden');
+        list.innerHTML = this.wishlist.map(wine => `
+            <div class="archive-card" data-wishlist-id="${wine.id}">
+                <div class="archive-card-image">
+                    ${wine.image
+                        ? `<img src="${wine.image}" alt="${wine.name}">`
+                        : `<div class="placeholder-image ${wine.type || 'red'}">🍷</div>`}
+                </div>
+                <div class="archive-card-info">
+                    <div class="archive-card-name">${wine.name || 'Unknown'}</div>
+                    ${wine.producer ? `<div class="archive-card-producer">${wine.producer}</div>` : ''}
+                    <div class="archive-card-meta">
+                        ${[wine.type, wine.grape, wine.year].filter(Boolean).join(' · ')}
+                        ${wine.price ? ` · €${Math.round(wine.price)}` : ''}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        list.querySelectorAll('.archive-card').forEach(card => {
+            card.addEventListener('click', () => {
+                this.openWishlistDetail(card.dataset.wishlistId);
+            });
+        });
+    }
+
+    openWishlistDetail(wineId) {
+        const wine = this.wishlist.find(w => w.id === wineId);
+        if (!wine) return;
+
+        this.currentWishlistId = wineId;
+
+        // Hero image
+        const heroContent = document.getElementById('wishlistDetailHeroContent');
+        if (wine.image) {
+            heroContent.innerHTML = `<img src="${wine.image}" alt="${wine.name}" style="width:100%;height:100%;object-fit:contain;padding:16px;background:#ffffff">`;
+        } else {
+            heroContent.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:4rem;opacity:0.3">🍷</div>`;
+        }
+
+        document.getElementById('wishlistDetailTypeBadge').textContent = wine.type || '';
+        document.getElementById('wishlistDetailName').textContent = wine.name || 'Unknown';
+
+        const producerEl = document.getElementById('wishlistDetailProducer');
+        if (wine.producer) {
+            producerEl.textContent = wine.producer;
+            producerEl.style.display = 'block';
+        } else {
+            producerEl.style.display = 'none';
+        }
+
+        document.getElementById('wishlistDetailRegion').textContent = wine.region || '';
+        document.getElementById('wishlistDetailYear').textContent = wine.year || '—';
+        document.getElementById('wishlistDetailGrape').textContent = wine.grape || '—';
+        document.getElementById('wishlistDetailPrice').textContent = wine.price ? `€${Math.round(wine.price)}` : '—';
+
+        const notesSection = document.getElementById('wishlistDetailNotesSection');
+        if (wine.notes) {
+            notesSection.style.display = '';
+            document.getElementById('wishlistDetailNotes').textContent = wine.notes;
+        } else {
+            notesSection.style.display = 'none';
+        }
+
+        this.openModal('wishlistDetailModal');
+    }
+
+    moveWishlistToCellar() {
+        const wine = this.wishlist.find(w => w.id === this.currentWishlistId);
+        if (!wine) return;
+
+        // Remove from wishlist
+        this.wishlist = this.wishlist.filter(w => w.id !== this.currentWishlistId);
+        if (this.firebaseEnabled && this.db && this.userId) {
+            this.db.ref(`users/${this.userId}/wishlist/${this.currentWishlistId}`).remove();
+        }
+
+        // Add to cellar
+        wine.addedAt = new Date().toISOString();
+        wine.quantity = 1;
+        this.wines.unshift(wine);
+        this.saveWines();
+        this.renderWineList();
+        this.updateStats();
+
+        this.closeModal('wishlistDetailModal');
+        this.renderWishlist();
+        this.showToast('Wine moved to cellar!');
+    }
+
+    deleteFromWishlistConfirm() {
+        if (!confirm('Remove this wine from your wishlist?')) return;
+
+        this.wishlist = this.wishlist.filter(w => w.id !== this.currentWishlistId);
+        if (this.firebaseEnabled && this.db && this.userId) {
+            this.db.ref(`users/${this.userId}/wishlist/${this.currentWishlistId}`).remove();
+        }
+
+        // Clean up image from Storage
+        this.deleteImageFromStorage(this.currentWishlistId, 'wines');
+
+        this.closeModal('wishlistDetailModal');
+        this.renderWishlist();
+        this.showToast('Wine removed from wishlist');
     }
 
     // ============================

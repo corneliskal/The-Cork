@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="The Cork">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="styles.css?v=52">
+    <link rel="stylesheet" href="styles.css?v=53">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -35,7 +35,12 @@
                     <span id="totalBottles">0</span> bottles
                 </div>
                 <div class="header-actions">
-                    <button id="archiveBtn" class="header-icon-btn" aria-label="Archief">
+                    <button id="wishlistBtn" class="header-icon-btn" aria-label="Wishlist">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                    </button>
+                    <button id="archiveBtn" class="header-icon-btn" aria-label="Archive">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M21 8v13H3V8"/>
                             <path d="M1 3h22v5H1z"/>
@@ -265,7 +270,7 @@
         <div id="addModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Add Wine</h2>
+                    <h2 id="addModalTitle">Add Wine</h2>
                     <button class="close-btn" data-close="addModal">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -275,38 +280,26 @@
                 </div>
 
                 <div class="modal-body">
-                    <!-- Image Upload Section -->
-                    <div class="upload-section">
-                        <div id="imagePreview" class="image-preview">
-                            <div class="upload-placeholder">
+                    <!-- Destination Choice -->
+                    <div id="addDestinationStep" class="add-step">
+                        <div class="destination-tiles">
+                            <button class="destination-tile" data-destination="cellar">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                                    <path d="M21 15l-5-5L5 21"/>
+                                    <path d="M8 2h8l-1.5 8a3.5 3.5 0 0 1-2.5 2.5 3.5 3.5 0 0 1-2.5-2.5L8 2z"/>
+                                    <line x1="12" y1="12.5" x2="12" y2="19"/>
+                                    <line x1="8" y1="19" x2="16" y2="19"/>
                                 </svg>
-                                <span>Tap to add photo</span>
-                            </div>
-                            <img id="previewImg" src="" alt="Wine label preview">
-                        </div>
-                        <div class="upload-buttons">
-                            <button id="cameraBtn" class="upload-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                                    <circle cx="12" cy="13" r="4"/>
-                                </svg>
-                                Camera
+                                <span class="tile-label">Cellar</span>
+                                <span class="tile-hint">Add to your collection</span>
                             </button>
-                            <button id="galleryBtn" class="upload-btn">
+                            <button class="destination-tile" data-destination="wishlist">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                                    <path d="M21 15l-5-5L5 21"/>
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                                 </svg>
-                                Gallery
+                                <span class="tile-label">Wishlist</span>
+                                <span class="tile-hint">Save for later</span>
                             </button>
                         </div>
-                        <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
-                        <input type="file" id="galleryInput" accept="image/*" hidden>
                     </div>
 
                     <!-- Scanning Indicator -->
@@ -317,121 +310,141 @@
                         <p>Reading label...</p>
                     </div>
 
-                    <!-- Wine Form -->
-                    <form id="wineForm" class="wine-form">
-                        <div class="form-group">
-                            <label for="wineName">Wine Name *</label>
-                            <input type="text" id="wineName" required placeholder="e.g., Grand Vin 2015">
-                        </div>
+                    <!-- Hidden file input for photo picker -->
+                    <input type="file" id="addPhotoInput" accept="image/*" hidden>
 
-                        <div class="form-group">
-                            <label for="wineProducer">Producer / House</label>
-                            <input type="text" id="wineProducer" placeholder="e.g., Château Margaux">
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="wineType">Type</label>
-                                <select id="wineType">
-                                    <option value="red">Red</option>
-                                    <option value="white">White</option>
-                                    <option value="rosé">Rosé</option>
-                                    <option value="sparkling">Sparkling</option>
-                                    <option value="dessert">Dessert</option>
-                                </select>
+                    <!-- Edit Form (hidden, only shown in edit mode) -->
+                    <div id="addStepEdit" class="add-step hidden">
+                        <div class="upload-section">
+                            <div id="imagePreview" class="image-preview">
+                                <div class="upload-placeholder">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <path d="M21 15l-5-5L5 21"/>
+                                    </svg>
+                                    <span>Tap to add photo</span>
+                                </div>
+                                <img id="previewImg" src="" alt="Wine label preview">
                             </div>
+                            <input type="file" id="editPhotoInput" accept="image/*" hidden>
+                        </div>
+
+                        <form id="wineForm" class="wine-form">
                             <div class="form-group">
-                                <label for="wineYear">Year</label>
-                                <input type="number" id="wineYear" min="1900" max="2030" placeholder="2020">
+                                <label for="wineName">Wine Name *</label>
+                                <input type="text" id="wineName" required placeholder="e.g., Grand Vin 2015">
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label for="wineRegion">Region</label>
-                            <input type="text" id="wineRegion" placeholder="e.g., Bordeaux, France">
-                        </div>
+                            <div class="form-group">
+                                <label for="wineProducer">Producer / House</label>
+                                <input type="text" id="wineProducer" placeholder="e.g., Chateau Margaux">
+                            </div>
 
-                        <div class="form-group">
-                            <label for="wineGrape">Grape Variety</label>
-                            <input type="text" id="wineGrape" placeholder="e.g., Cabernet Sauvignon">
-                        </div>
-
-                        <div class="characteristics-section">
-                            <h3>Characteristics</h3>
-
-                            <div class="characteristic-slider">
-                                <label>
-                                    <span>Boldness</span>
-                                    <span class="char-value" id="boldnessValue">3</span>
-                                </label>
-                                <input type="range" id="boldness" min="1" max="5" value="3">
-                                <div class="slider-labels">
-                                    <span>Light</span>
-                                    <span>Bold</span>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="wineType">Type</label>
+                                    <select id="wineType">
+                                        <option value="red">Red</option>
+                                        <option value="white">White</option>
+                                        <option value="rosé">Rosé</option>
+                                        <option value="sparkling">Sparkling</option>
+                                        <option value="dessert">Dessert</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="wineYear">Year</label>
+                                    <input type="number" id="wineYear" min="1900" max="2030" placeholder="2020">
                                 </div>
                             </div>
 
-                            <div class="characteristic-slider">
-                                <label>
-                                    <span>Tannins</span>
-                                    <span class="char-value" id="tanninsValue">3</span>
-                                </label>
-                                <input type="range" id="tannins" min="1" max="5" value="3">
-                                <div class="slider-labels">
-                                    <span>Smooth</span>
-                                    <span>Tannic</span>
-                                </div>
-                            </div>
-
-                            <div class="characteristic-slider">
-                                <label>
-                                    <span>Acidity</span>
-                                    <span class="char-value" id="acidityValue">3</span>
-                                </label>
-                                <input type="range" id="acidity" min="1" max="5" value="3">
-                                <div class="slider-labels">
-                                    <span>Soft</span>
-                                    <span>Acidic</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
                             <div class="form-group">
-                                <label for="winePrice">Prijs (€)</label>
-                                <input type="number" id="winePrice" min="0" step="0.01" placeholder="25.00">
+                                <label for="wineRegion">Region</label>
+                                <input type="text" id="wineRegion" placeholder="e.g., Bordeaux, France">
                             </div>
+
                             <div class="form-group">
-                                <label for="wineQuantity">Aantal</label>
-                                <div class="quantity-control">
-                                    <button type="button" class="qty-btn" data-action="decrease">−</button>
-                                    <input type="number" id="wineQuantity" min="1" value="1">
-                                    <button type="button" class="qty-btn" data-action="increase">+</button>
+                                <label for="wineGrape">Grape Variety</label>
+                                <input type="text" id="wineGrape" placeholder="e.g., Cabernet Sauvignon">
+                            </div>
+
+                            <div class="characteristics-section">
+                                <h3>Characteristics</h3>
+
+                                <div class="characteristic-slider">
+                                    <label>
+                                        <span>Boldness</span>
+                                        <span class="char-value" id="boldnessValue">3</span>
+                                    </label>
+                                    <input type="range" id="boldness" min="1" max="5" value="3">
+                                    <div class="slider-labels">
+                                        <span>Light</span>
+                                        <span>Bold</span>
+                                    </div>
+                                </div>
+
+                                <div class="characteristic-slider">
+                                    <label>
+                                        <span>Tannins</span>
+                                        <span class="char-value" id="tanninsValue">3</span>
+                                    </label>
+                                    <input type="range" id="tannins" min="1" max="5" value="3">
+                                    <div class="slider-labels">
+                                        <span>Smooth</span>
+                                        <span>Tannic</span>
+                                    </div>
+                                </div>
+
+                                <div class="characteristic-slider">
+                                    <label>
+                                        <span>Acidity</span>
+                                        <span class="char-value" id="acidityValue">3</span>
+                                    </label>
+                                    <input type="range" id="acidity" min="1" max="5" value="3">
+                                    <div class="slider-labels">
+                                        <span>Soft</span>
+                                        <span>Acidic</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label for="wineStore">Winkel</label>
-                            <input type="text" id="wineStore" placeholder="bijv. Albert Heijn, Gall & Gall">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Beste Drinkmoment</label>
-                            <div class="drink-window-row">
-                                <input type="number" id="drinkFrom" min="1900" max="2100" placeholder="Van">
-                                <span class="drink-window-separator">—</span>
-                                <input type="number" id="drinkUntil" min="1900" max="2100" placeholder="Tot">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="winePrice">Price (€)</label>
+                                    <input type="number" id="winePrice" min="0" step="0.01" placeholder="25.00">
+                                </div>
+                                <div class="form-group">
+                                    <label for="wineQuantity">Quantity</label>
+                                    <div class="quantity-control">
+                                        <button type="button" class="qty-btn" data-action="decrease">−</button>
+                                        <input type="number" id="wineQuantity" min="1" value="1">
+                                        <button type="button" class="qty-btn" data-action="increase">+</button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="form-group">
-                            <label for="wineNotes">Tasting Notes</label>
-                            <textarea id="wineNotes" rows="3" placeholder="Your personal notes..."></textarea>
-                        </div>
+                            <div class="form-group">
+                                <label for="wineStore">Store</label>
+                                <input type="text" id="wineStore" placeholder="e.g., Total Wine, Vivino">
+                            </div>
 
-                        <button type="submit" class="submit-btn">Add to Cellar</button>
-                    </form>
+                            <div class="form-group">
+                                <label>Drinking Window</label>
+                                <div class="drink-window-row">
+                                    <input type="number" id="drinkFrom" min="1900" max="2100" placeholder="From">
+                                    <span class="drink-window-separator">—</span>
+                                    <input type="number" id="drinkUntil" min="1900" max="2100" placeholder="Until">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="wineNotes">Tasting Notes</label>
+                                <textarea id="wineNotes" rows="3" placeholder="Your personal notes..."></textarea>
+                            </div>
+
+                            <button type="submit" class="submit-btn">Save Changes</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -598,7 +611,7 @@
         <div id="archiveListModal" class="modal">
             <div class="modal-content archive-list-modal">
                 <div class="modal-header">
-                    <h2>Archief</h2>
+                    <h2>Archive</h2>
                     <button class="close-btn" data-close="archiveListModal">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -614,7 +627,7 @@
                                 <circle cx="11" cy="11" r="8"/>
                                 <path d="M21 21l-4.35-4.35"/>
                             </svg>
-                            <input type="text" id="archiveSearchInput" class="search-input" placeholder="Zoek in archief...">
+                            <input type="text" id="archiveSearchInput" class="search-input" placeholder="Search archive...">
                             <button id="clearArchiveSearch" class="clear-search-btn hidden">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="18" y1="6" x2="6" y2="18"/>
@@ -734,7 +747,7 @@
                     </div>
 
                     <div id="archiveDetailReviewSection" class="detail-notes-section archive-review">
-                        <div class="detail-notes-label">Mijn Review</div>
+                        <div class="detail-notes-label">My Review</div>
                         <div id="archiveDetailReview" class="detail-notes-text"></div>
                         <span class="archive-date" id="archiveDetailDate"></span>
                     </div>
@@ -747,11 +760,85 @@
             </div>
         </div>
 
+        <!-- Wishlist Modal -->
+        <div id="wishlistModal" class="modal">
+            <div class="modal-content archive-list-modal">
+                <div class="modal-header">
+                    <h2>Wishlist</h2>
+                    <button class="close-btn" data-close="wishlistModal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="wishlistEmptyState" class="archive-empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="opacity:0.3;margin-bottom:8px">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                        <p>Your wishlist is empty</p>
+                        <span class="archive-empty-hint">Wines you want to try will appear here</span>
+                    </div>
+                    <div id="wishlistList" class="archive-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wishlist Detail Modal -->
+        <div id="wishlistDetailModal" class="modal">
+            <div class="modal-content detail-modal">
+                <button class="close-btn detail-close" data-close="wishlistDetailModal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+
+                <div id="wishlistDetailHero" class="detail-hero">
+                    <div id="wishlistDetailHeroContent" class="detail-hero-content"></div>
+                    <div class="detail-hero-info">
+                        <span id="wishlistDetailTypeBadge" class="detail-type-badge">Red</span>
+                        <h1 id="wishlistDetailName" class="detail-wine-name">Wine Name</h1>
+                        <div id="wishlistDetailProducer" class="detail-wine-producer">Producer</div>
+                        <div id="wishlistDetailRegion" class="detail-wine-region">Region</div>
+                    </div>
+                </div>
+
+                <div class="detail-content">
+                    <div class="detail-facts-row">
+                        <div class="detail-fact">
+                            <div class="detail-fact-label">Year</div>
+                            <div id="wishlistDetailYear" class="detail-fact-value">—</div>
+                        </div>
+                        <div class="detail-fact">
+                            <div class="detail-fact-label">Grape</div>
+                            <div id="wishlistDetailGrape" class="detail-fact-value">—</div>
+                        </div>
+                        <div class="detail-fact">
+                            <div class="detail-fact-label">Price</div>
+                            <div id="wishlistDetailPrice" class="detail-fact-value">—</div>
+                        </div>
+                    </div>
+
+                    <div id="wishlistDetailNotesSection" class="detail-notes-section">
+                        <div class="detail-notes-label">Notes</div>
+                        <div id="wishlistDetailNotes" class="detail-notes-text"></div>
+                    </div>
+
+                    <div class="detail-actions">
+                        <button id="moveWishlistToCellarBtn" class="detail-action-btn detail-btn-edit">Move to Cellar</button>
+                        <button id="deleteWishlistBtn" class="detail-action-btn detail-btn-delete">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Year Picker Modal -->
         <div id="yearModal" class="modal">
             <div class="modal-content year-modal">
                 <div class="year-picker-header">
-                    <h2>Welk jaartal?</h2>
+                    <h2>What year?</h2>
                     <p>Selecteer het vintage jaar</p>
                 </div>
                 <div class="year-picker-buttons"></div>
@@ -771,7 +858,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
-    <script src="config.js?v=52"></script>
-    <script src="app.js?v=52"></script>
+    <script src="config.js?v=53"></script>
+    <script src="app.js?v=53"></script>
 </body>
 </html>
