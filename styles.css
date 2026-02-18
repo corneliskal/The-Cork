@@ -702,6 +702,7 @@ body {
     letter-spacing: 0.4px;
     padding: 3px 8px;
     border-radius: 4px;
+    text-align: center;
 }
 
 .wine-type-tag.red { background: rgba(114, 47, 55, 0.12); color: var(--red-wine); }
