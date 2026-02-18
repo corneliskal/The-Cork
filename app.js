@@ -1322,7 +1322,9 @@ class WineCellar {
             return null;
         }) : Promise.resolve(null);
 
-        const imagePromise = wineData.name ? this.searchWineImage(wineData).catch(e => {
+        // Skip image search if wine already has a Storage URL (not base64)
+        const hasProductImage = wineData.image && !this.isBase64Image(wineData.image);
+        const imagePromise = (wineData.name && !hasProductImage) ? this.searchWineImage(wineData).catch(e => {
             console.log('Background image search failed:', e);
             return null;
         }) : Promise.resolve(null);
