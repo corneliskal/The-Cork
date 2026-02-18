@@ -298,6 +298,7 @@ class WineCellar {
             }
 
             this.db = firebase.database();
+            this.storage = firebase.storage();
             this.updateSyncStatus('connecting');
 
             // Handle redirect result (for mobile sign-in)
@@ -572,6 +573,11 @@ class WineCellar {
             this.archive = firebaseArchive;
             this.archive.sort((a, b) => new Date(b.archivedAt) - new Date(a.archivedAt));
         });
+
+        // One-time migration of base64 images to Storage (after initial data load)
+        archiveRef.once('value', () => {
+            setTimeout(() => this.migrateImagesToStorage(), 2000);
+        });
     }
 
     async pushWineToFirebase(wine) {
@@ -714,6 +720,94 @@ class WineCellar {
         }
     }
 
+
+    // ============================
+    // Firebase Storage (Images)
+    // ============================
+
+    async uploadImageToStorage(imageId, base64Data, folder = 'wines') {
+        if (!this.storage || !this.userId) return null;
+
+        try {
+            // Convert base64 data URL to Blob
+            const response = await fetch(base64Data);
+            const blob = await response.blob();
+
+            const ref = this.storage.ref(`users/${this.userId}/${folder}/${imageId}.jpg`);
+            await ref.put(blob, { contentType: 'image/jpeg' });
+            const url = await ref.getDownloadURL();
+            return url;
+        } catch (error) {
+            console.error('Error uploading image to Storage:', error);
+            return null;
+        }
+    }
+
+    async deleteImageFromStorage(imageId, folder = 'wines') {
+        if (!this.storage || !this.userId) return;
+
+        try {
+            const ref = this.storage.ref(`users/${this.userId}/${folder}/${imageId}.jpg`);
+            await ref.delete();
+        } catch (error) {
+            // Ignore "object not found" errors
+            if (error.code !== 'storage/object-not-found') {
+                console.error('Error deleting image from Storage:', error);
+            }
+        }
+    }
+
+    isBase64Image(str) {
+        return str && typeof str === 'string' && str.startsWith('data:');
+    }
+
+    async migrateImagesToStorage() {
+        if (!this.storage || !this.userId) return;
+
+        try {
+            // Check if already migrated
+            const flagRef = this.db.ref(`users/${this.userId}/imagesMigrated`);
+            const flagSnap = await flagRef.once('value');
+            if (flagSnap.val() === true) return;
+
+            // Collect all items with base64 images
+            const toMigrate = [];
+            this.wines.forEach(w => {
+                if (this.isBase64Image(w.image)) toMigrate.push({ item: w, type: 'wines' });
+            });
+            this.archive.forEach(w => {
+                if (this.isBase64Image(w.image)) toMigrate.push({ item: w, type: 'archive' });
+            });
+
+            if (toMigrate.length === 0) {
+                await flagRef.set(true);
+                return;
+            }
+
+            console.log(`🔄 Migrating ${toMigrate.length} images to Storage...`);
+            this.showToast(`Migrating ${toMigrate.length} images...`);
+
+            let done = 0;
+            for (const { item, type } of toMigrate) {
+                const url = await this.uploadImageToStorage(item.id, item.image, type);
+                if (url) {
+                    item.image = url;
+                    // Update in Firebase immediately
+                    await this.db.ref(`users/${this.userId}/${type}/${item.id}/image`).set(url);
+                }
+                done++;
+                if (done % 5 === 0) {
+                    this.showToast(`Migrating images... (${done}/${toMigrate.length})`);
+                }
+            }
+
+            await flagRef.set(true);
+            console.log('✅ Image migration complete');
+            this.showToast('Image migration complete!');
+        } catch (error) {
+            console.error('Error migrating images:', error);
+        }
+    }
 
     // ============================
     // Event Binding
@@ -1137,7 +1231,14 @@ class WineCellar {
             this.renderWineList();
             this.updateStats();
             this.closeModal('addModal');
-            this.showToast('Wijn herkend en opgeslagen!');
+            this.showToast('Wine recognized and saved!');
+
+            // Upload label image to Storage in background
+            if (this.isBase64Image(savedWine.image)) {
+                this.uploadImageToStorage(enrichId, savedWine.image).then(url => {
+                    if (url) this.updateSavedWine(enrichId, { image: url });
+                });
+            }
 
             // Start prijs + foto ophalen op de achtergrond
             this.enrichWineInBackground(enrichId, wineData);
@@ -1220,13 +1321,15 @@ class WineCellar {
         });
 
         // Foto verwerken wanneer klaar
-        imagePromise.then(imageBase64 => {
+        imagePromise.then(async (imageBase64) => {
             const proc = this.backgroundProcessing.get(enrichId);
             if (proc) proc.image = false;
 
             if (imageBase64) {
                 console.log('🖼️ Productfoto gevonden (achtergrond)');
-                this.updateSavedWine(enrichId, { image: imageBase64 });
+                // Upload to Storage, fall back to base64 if upload fails
+                const url = await this.uploadImageToStorage(enrichId, imageBase64);
+                this.updateSavedWine(enrichId, { image: url || imageBase64 });
             }
             this.checkEnrichmentDone(enrichId);
         });
@@ -2316,6 +2419,8 @@ class WineCellar {
     async skipArchiveAndDelete() {
         console.log('skipArchiveAndDelete called');
         try {
+            // Clean up image from Storage
+            this.deleteImageFromStorage(this.currentWineId);
             // Just delete without archiving
             await this.deleteCurrentWine();
             this.closeModal('archiveModal');
@@ -2736,6 +2841,8 @@ class WineCellar {
             return;
         }
 
+        // Clean up image from Storage
+        this.deleteImageFromStorage(this.currentArchiveId, 'wines');
         await this.deleteFromArchive(this.currentArchiveId);
         this.filterAndRenderArchive();
 
