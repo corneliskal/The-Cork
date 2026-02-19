@@ -490,51 +490,23 @@ exports.deepAnalyzeWineLabel = functions.https.onRequest(async (req, res) => {
 
         const searchTerms = [name, producer, year, grape, region].filter(Boolean).join(' ');
 
-        const prompt = `Search for this specific wine and provide expert-verified information: "${searchTerms}"
+        const prompt = `Search Wine: "${searchTerms}"
 
-INSTRUCTIONS:
-1. Conduct a deep web search for current professional reviews (e.g., Robert Parker/Wine Advocate, Antonio Galloni/Vinous, Jancis Robinson, James Suckling).
-2. Extract the specific 'drinking window' or 'maturity' dates mentioned by these experts for this EXACT vintage.
-3. If experts disagree on the window, provide a conservative range (latest 'drinkFrom' and earliest 'drinkUntil').
-4. Calculate 'boldness', 'tannins', and 'acidity' based on the technical sheet or professional tasting notes.
-5. If the wine is 'NV' (Non-Vintage), use the most recent disgorgement or release data available.
-6. If no professional reviews exist for this wine, omit expert_ratings entirely and estimate characteristics based on grape, region and vintage.
-7. For the drinking_window, differentiate between:
-   - canDrinkFrom/canDrinkUntil: the full possible range
-   - bestFrom/bestUntil: when the wine is drinking well
-   - peakFrom/peakUntil: the optimal sweet spot
-   Base these on expert consensus. If only a single window is mentioned (e.g. "2028-2040"), set bestFrom/bestUntil to that range and estimate peak as the middle third, with canDrink as ±3-5 years buffer depending on wine type and structure.
+GOAL: Extract expert data into JSON.
+RULES:
+1. Sources: Prioritize Wine Advocate, Vinous, Jancis Robinson, Suckling.
+2. Logic: If experts vary, use latest 'From' and earliest 'Until'.
+3. NV Wine: Use most recent disgorgement/base year.
+4. Calculations:
+   - bestFrom/Until = Expert stated range.
+   - peakFrom/Until = Middle 33% of best range.
+   - canDrinkFrom/Until = best range +/- 3 years.
+5. Missing Data: Omit 'expert_ratings' if no professional reviews found; estimate traits from terroir/varietal.
+6. Name: Use the cuvée/vineyard/wine name, NOT the producer. E.g. Domaine Achillée Rittersberg Riesling → name: "Rittersberg", producer: "Domaine Achillée".
+7. Producer: Château, domaine, winery or estate name. Never use legal entity names (Société Civile, S.A., M.L.P., SRL, GmbH etc.).
 
-Return ONLY a JSON object with this structure:
-{
-    "name": "cuvée or wine name (the specific cuvée, vineyard, or wine name — NOT the producer/domaine. E.g. Domaine Achillée Rittersberg Riesling → 'Rittersberg', Cloudy Bay Sauvignon Blanc → 'Sauvignon Blanc')",
-    "producer": "producer/house name (château, domaine, winery or estate name - never use legal entity names like Société Civile, S.A., M.L.P., SRL, GmbH etc.)",
-    "year": year as number or null,
-    "region": "region, country",
-    "grape": "grape variety/varieties",
-    "type": "red/white/rosé/sparkling/dessert",
-    "expert_ratings": [
-        {"source": "reviewer name", "score": "score as string", "window": "drink window as stated"}
-    ],
-    "characteristics": {
-        "boldness": 1-5,
-        "tannins": 1-5,
-        "acidity": 1-5,
-        "alcohol_pct": "alcohol percentage as string e.g. 13.5%"
-    },
-    "notes": "concise summary of flavor profile",
-    "drinking_window": {
-        "canDrinkFrom": year as number,
-        "bestFrom": year as number,
-        "peakFrom": year as number,
-        "peakUntil": year as number,
-        "bestUntil": year as number,
-        "canDrinkUntil": year as number
-    }
-}
-
-If no professional reviews exist, omit the expert_ratings field entirely.
-Only respond with JSON, no other text.`;
+OUTPUT: Minified JSON only. No prose.
+Schema: {"name":"","producer":"","year":0,"region":"","grape":"","type":"red/white/rosé/sparkling/dessert","expert_ratings":[{"source":"","score":"","window":""}],"characteristics":{"boldness":1,"tannins":1,"acidity":1,"alcohol_pct":""},"notes":"","drinking_window":{"canDrinkFrom":0,"bestFrom":0,"peakFrom":0,"peakUntil":0,"bestUntil":0,"canDrinkUntil":0}}`;
 
         const result = await model.generateContent(prompt);
         const content = result.response.text();
