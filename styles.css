@@ -156,10 +156,10 @@ body {
 }
 
 .logo-title {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Nunito Sans', 'Outfit', sans-serif;
     font-weight: 700;
     font-size: 1rem;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.5px;
     text-transform: uppercase;
     color: var(--label-primary);
     line-height: 1.1;
@@ -2559,10 +2559,10 @@ body {
 }
 
 .login-logo-title {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Nunito Sans', sans-serif;
     font-weight: 700;
     font-size: 28px;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.5px;
     text-transform: uppercase;
     color: var(--label-primary);
 }
