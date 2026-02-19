@@ -1584,7 +1584,7 @@ body {
 }
 .dw-status.dw-too-young   { color: #8A8278; background: rgba(138,130,120, 0.08); }
 .dw-status.dw-opening     { color: #8B7444; background: rgba(201,169,110, 0.1); }
-.dw-status.dw-drinking-well { color: #8B7444; background: rgba(201,169,110, 0.12); }
+.dw-status.dw-ready { color: #8B7444; background: rgba(201,169,110, 0.12); }
 .dw-status.dw-peak        { color: #722F37; background: rgba(114,47,55, 0.08); }
 .dw-status.dw-past-peak   { color: #9B4049; background: rgba(155,64,73, 0.08); }
 .dw-status.dw-drink-soon  { color: #9B4049; background: rgba(155,64,73, 0.1); }
@@ -1677,32 +1677,41 @@ body {
     margin-top: 2px;
 }
 
-/* Year labels */
-.dw-labels {
+/* Phase labels */
+.dw-phases {
     position: relative;
-    height: 28px;
-    margin: 4px 6px 0;
+    display: flex;
+    margin: 6px 6px 0;
+    min-height: 32px;
 }
-.dw-yr {
+.dw-phase {
     position: absolute;
-    font-family: ui-monospace, monospace;
-    font-size: 9px;
-    color: rgba(92,86,78, 0.5);
-    transform: translateX(-50%);
-    top: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
 }
-.dw-yr.now {
+.dw-phase-label {
     font-family: 'Outfit', sans-serif;
     font-size: 8px;
     font-weight: 600;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     text-transform: uppercase;
-    color: #9B4049;
-    opacity: 0.6;
+    white-space: nowrap;
+    opacity: 0.45;
 }
-.dw-yr.pk {
-    color: #8B7444;
+.dw-phase-years {
+    font-family: ui-monospace, monospace;
+    font-size: 9px;
+    color: rgba(92,86,78, 0.4);
+    white-space: nowrap;
 }
+.dw-phase.pk .dw-phase-label { color: #8B7444; opacity: 0.7; }
+.dw-phase.pk .dw-phase-years { color: #8B7444; opacity: 0.6; }
+.dw-phase.opening .dw-phase-label,
+.dw-phase.ready .dw-phase-label { color: #8A8278; }
+.dw-phase.past .dw-phase-label,
+.dw-phase.decline .dw-phase-label { color: #9B4049; opacity: 0.4; }
 
 .dw-no-data {
     font-size: 13px;
@@ -3010,7 +3019,7 @@ body {
 }
 
 .wine-drink-status.dw-peak        { background: rgba(114,47,55, 0.08); color: #722F37; }
-.wine-drink-status.dw-drinking-well { background: rgba(201,169,110, 0.12); color: #8B7444; }
+.wine-drink-status.dw-ready { background: rgba(201,169,110, 0.12); color: #8B7444; }
 .wine-drink-status.dw-drink-soon  { background: rgba(155,64,73, 0.1); color: #9B4049; }
 .wine-drink-status.dw-past-peak   { background: rgba(155,64,73, 0.08); color: #9B4049; }
 .wine-drink-status.dw-opening     { background: rgba(201,169,110, 0.1); color: #8B7444; }

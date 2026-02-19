@@ -1974,7 +1974,7 @@ class WineCellar {
                 const statusB = this.getDrinkStatus(b);
 
                 // Priority order: perfect > soon > early > past > unknown
-                const priority = { 'peak': 0, 'drinking-well': 1, 'drink-soon': 2, 'past-peak': 3, 'opening': 4, 'too-young': 5, 'decline': 6, 'unknown': 7 };
+                const priority = { 'peak': 0, 'ready': 1, 'drink-soon': 2, 'past-peak': 3, 'opening': 4, 'too-young': 5, 'decline': 6, 'unknown': 7 };
                 const prioA = priority[statusA.status] ?? 7;
                 const prioB = priority[statusB.status] ?? 7;
 
@@ -3142,7 +3142,7 @@ class WineCellar {
         const now = new Date().getFullYear();
         if (now < w.canDrinkFrom) return { status: 'too-young', label: 'Too Young', class: 'dw-too-young' };
         if (now < w.bestFrom)     return { status: 'opening', label: 'Opening Up', class: 'dw-opening' };
-        if (now < w.peakFrom)     return { status: 'drinking-well', label: 'Drinking Well', class: 'dw-drinking-well' };
+        if (now < w.peakFrom)     return { status: 'ready', label: 'Ready', class: 'dw-ready' };
         if (now <= w.peakUntil)   return { status: 'peak', label: 'At Peak', class: 'dw-peak' };
         if (now <= w.bestUntil)   return { status: 'past-peak', label: 'Past Peak', class: 'dw-past-peak' };
         if (now <= w.canDrinkUntil) return { status: 'drink-soon', label: 'Drink Soon', class: 'dw-drink-soon' };
@@ -3225,26 +3225,26 @@ class WineCellar {
 
         container.appendChild(track);
 
-        // Year labels
-        const labels = document.createElement('div');
-        labels.className = 'dw-labels';
-        const peakMid = Math.round((w.peakFrom + w.peakUntil) / 2);
-        const labelData = [
-            { year: w.canDrinkFrom, cls: '' },
-            { year: peakMid, cls: 'pk' },
-            { year: w.canDrinkUntil, cls: '' }
+        // Phase labels with start-stop years
+        const phases = document.createElement('div');
+        phases.className = 'dw-phases';
+        const phaseData = [
+            { from: w.canDrinkFrom, to: w.bestFrom, label: 'Opening', cls: 'opening' },
+            { from: w.bestFrom, to: w.peakFrom, label: 'Ready', cls: 'ready' },
+            { from: w.peakFrom, to: w.peakUntil, label: 'Peak', cls: 'pk' },
+            { from: w.peakUntil, to: w.bestUntil, label: 'Past Peak', cls: 'past' },
+            { from: w.bestUntil, to: w.canDrinkUntil, label: 'Decline', cls: 'decline' },
         ];
-        // Add "now" label if not too close to others
-        const nowPct = pct(currentYear);
-        const tooClose = labelData.some(l => Math.abs(pct(l.year) - nowPct) < 12);
-        if (!tooClose && currentYear >= w.canDrinkFrom && currentYear <= w.canDrinkUntil) {
-            labelData.push({ year: currentYear, cls: 'now' });
-        }
-        labelData.sort((a, b) => a.year - b.year);
-        labelData.forEach(l => {
-            labels.innerHTML += `<span class="dw-yr ${l.cls}" style="left:${pct(l.year)}%">${l.year}</span>`;
+        phaseData.forEach(p => {
+            if (p.from >= p.to) return; // skip zero-width phases
+            const left = pct(p.from);
+            const width = pct(p.to) - left;
+            phases.innerHTML += `<div class="dw-phase ${p.cls}" style="left:${left}%;width:${width}%">
+                <span class="dw-phase-label">${p.label}</span>
+                <span class="dw-phase-years">${p.from}–${p.to}</span>
+            </div>`;
         });
-        container.appendChild(labels);
+        container.appendChild(phases);
     }
 
     // ============================
