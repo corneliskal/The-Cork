@@ -3204,7 +3204,7 @@ class WineCellar {
         const peakWidth = pct(w.peakUntil) - peakLeft;
         track.innerHTML += `<div class="dw-peak-band" style="left:${peakLeft}%;width:${peakWidth}%"></div>`;
 
-        // Milestone dots
+        // Milestone dots with year labels underneath
         const dots = [
             { year: w.canDrinkFrom, cls: 'minor' },
             { year: w.bestFrom, cls: 'minor' },
@@ -3213,8 +3213,12 @@ class WineCellar {
             { year: w.bestUntil, cls: 'minor' },
             { year: w.canDrinkUntil, cls: 'minor' },
         ];
+        // Deduplicate dots at same year
+        const seen = new Set();
         dots.forEach(d => {
-            track.innerHTML += `<div class="dw-dot ${d.cls}" style="left:${pct(d.year)}%"></div>`;
+            if (seen.has(d.year)) return;
+            seen.add(d.year);
+            track.innerHTML += `<div class="dw-dot ${d.cls}" style="left:${pct(d.year)}%"><span class="dw-dot-year">${d.year}</span></div>`;
         });
 
         // NOW diamond marker
@@ -3224,27 +3228,6 @@ class WineCellar {
         }
 
         container.appendChild(track);
-
-        // Phase labels with start-stop years
-        const phases = document.createElement('div');
-        phases.className = 'dw-phases';
-        const phaseData = [
-            { from: w.canDrinkFrom, to: w.bestFrom, label: 'Opening', cls: 'opening' },
-            { from: w.bestFrom, to: w.peakFrom, label: 'Ready', cls: 'ready' },
-            { from: w.peakFrom, to: w.peakUntil, label: 'Peak', cls: 'pk' },
-            { from: w.peakUntil, to: w.bestUntil, label: 'Past Peak', cls: 'past' },
-            { from: w.bestUntil, to: w.canDrinkUntil, label: 'Decline', cls: 'decline' },
-        ];
-        phaseData.forEach(p => {
-            if (p.from >= p.to) return; // skip zero-width phases
-            const left = pct(p.from);
-            const width = pct(p.to) - left;
-            phases.innerHTML += `<div class="dw-phase ${p.cls}" style="left:${left}%;width:${width}%">
-                <span class="dw-phase-label">${p.label}</span>
-                <span class="dw-phase-years">${p.from}–${p.to}</span>
-            </div>`;
-        });
-        container.appendChild(phases);
     }
 
     // ============================
