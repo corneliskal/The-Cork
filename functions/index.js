@@ -82,7 +82,7 @@ exports.analyzeWineLabel = functions.https.onRequest(async (req, res) => {
 
         const prompt = `Analyze this wine label image and extract the following information in JSON format:
 {
-    "name": "wine name (the official wine name only, without the producer name)",
+    "name": "cuvée or wine name (the specific cuvée, vineyard, or wine name — NOT the producer/domaine. E.g. Domaine Achillée Rittersberg Riesling → 'Rittersberg', Cloudy Bay Sauvignon Blanc → 'Sauvignon Blanc')",
     "producer": "producer/house name (château, domaine, winery or estate name - never use legal entity names like Société Civile, S.A., M.L.P., SRL, GmbH etc.)",
     "year": year as number or null,
     "region": "region, country",
@@ -204,14 +204,19 @@ exports.quickAnalyzeWineLabel = functions.https.onRequest(async (req, res) => {
 
         const prompt = `Read this wine label and extract ONLY these 6 fields as JSON:
 {
-    "name": "wine name (without producer)",
-    "producer": "producer/house name",
+    "name": "cuvée or wine name (NOT the producer/domaine name)",
+    "producer": "domaine, château, house, or winery name",
     "year": year as number or null,
     "region": "region, country",
     "grape": "grape variety",
     "type": "red/white/rosé/sparkling/dessert"
 }
-Naming: "Château Pétrus" → name: "Pétrus", producer: "Château Pétrus". Only JSON, no other text.`;
+Rules:
+- "name" is the cuvée, vineyard, or specific wine name — NOT the domaine/producer.
+- "producer" is the domaine, château, maison, winery, or estate.
+- Examples: Domaine Achillée "Rittersberg" Riesling → name: "Rittersberg", producer: "Domaine Achillée". Château Pétrus → name: "Pétrus", producer: "Château Pétrus". Cloudy Bay Sauvignon Blanc → name: "Sauvignon Blanc", producer: "Cloudy Bay".
+- If only one name is visible and it's clearly a domaine/château, use it as producer and set name to the grape or appellation.
+Only JSON, no other text.`;
 
         const result = await model.generateContent([
             prompt,
@@ -487,7 +492,7 @@ INSTRUCTIONS:
 
 Return ONLY a JSON object with this structure:
 {
-    "name": "wine name (the official wine name only, without the producer name)",
+    "name": "cuvée or wine name (the specific cuvée, vineyard, or wine name — NOT the producer/domaine. E.g. Domaine Achillée Rittersberg Riesling → 'Rittersberg', Cloudy Bay Sauvignon Blanc → 'Sauvignon Blanc')",
     "producer": "producer/house name (château, domaine, winery or estate name - never use legal entity names like Société Civile, S.A., M.L.P., SRL, GmbH etc.)",
     "year": year as number or null,
     "region": "region, country",

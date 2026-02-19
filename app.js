@@ -1350,6 +1350,12 @@ class WineCellar {
                 }
                 if (deepData.grape && !wineData.grape) updates.grape = deepData.grape;
                 if (deepData.region && !wineData.region) updates.region = deepData.region;
+                // If quick scan missed producer and deep analysis found both name + producer,
+                // the quick scan likely used the producer name as wine name — fix both
+                if (deepData.name && deepData.producer && !wineData.producer) {
+                    updates.name = deepData.name;
+                    updates.producer = deepData.producer;
+                }
 
                 if (Object.keys(updates).length > 0) {
                     console.log('📝 Deep analysis klaar (achtergrond):', Object.keys(updates).join(', '));
