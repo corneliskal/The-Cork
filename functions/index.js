@@ -483,14 +483,9 @@ exports.deepAnalyzeWineLabel = functions.https.onRequest(async (req, res) => {
         console.log('🔍 Wine search for:', name, producer, year, grape, region);
 
         const genAI = new GoogleGenerativeAI(geminiKey);
-        const model = genAI.getGenerativeModel({
-            model: 'gemini-2.5-flash',
-            tools: [{ googleSearch: {} }]  // Enable web search grounding
-        });
-
         const searchTerms = [name, producer, year, grape, region].filter(Boolean).join(' ');
 
-        const prompt = `Search Wine: "${searchTerms}"
+        const basePrompt = `Wine: "${searchTerms}"
 
 GOAL: Extract expert data into JSON.
 RULES:
@@ -506,27 +501,55 @@ RULES:
 7. Producer: Château, domaine, winery or estate name. Never use legal entity names (Société Civile, S.A., M.L.P., SRL, GmbH etc.).
 
 OUTPUT: Minified JSON only. No prose.
-Schema: {"name":"","producer":"","year":0,"region":"","grape":"","type":"red/white/rosé/sparkling/dessert","expert_ratings":[{"source":"","score":"","window":""}],"characteristics":{"boldness":1,"tannins":1,"acidity":1,"alcohol_pct":""},"notes":"","drinking_window":{"canDrinkFrom":0,"bestFrom":0,"peakFrom":0,"peakUntil":0,"bestUntil":0,"canDrinkUntil":0}}`;
+Schema: {"name":"","producer":"","year":0,"region":"","grape":"","type":"red/white/rosé/sparkling/dessert","expert_ratings":[{"source":"","score":"","window":""}],"characteristics":{"boldness":1,"tannins":1,"acidity":1,"alcohol_pct":""},"notes":"","drinking_window":{"canDrinkFrom":0,"bestFrom":0,"peakFrom":0,"peakUntil":0,"bestUntil":0,"canDrinkUntil":0},"confidence":0}`;
 
-        const result = await model.generateContent(prompt);
-        const content = result.response.text();
-        console.log('Wine search response:', content);
+        // Step 1: Try WITHOUT grounding (cheap)
+        const modelLight = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const promptStep1 = basePrompt + `\n\nconfidence: 0-100 integer reflecting how certain you are about the data (especially expert_ratings and drinking_window). 90+ = well-known wine with reliable data. <70 = obscure/uncertain.`;
+
+        console.log('⚡ Step 1: without grounding...');
+        const result1 = await modelLight.generateContent(promptStep1);
+        const content1 = result1.response.text();
+        console.log('Step 1 response:', content1);
 
         let wineData;
         try {
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                wineData = JSON.parse(jsonMatch[0]);
-            } else {
-                wineData = JSON.parse(content);
-            }
+            const jsonMatch1 = content1.match(/\{[\s\S]*\}/);
+            wineData = JSON.parse(jsonMatch1 ? jsonMatch1[0] : content1);
         } catch (parseError) {
-            console.error('JSON parse error:', parseError);
-            res.status(500).json({ error: 'Failed to parse wine data', raw: content });
+            console.error('Step 1 JSON parse error:', parseError);
+            res.status(500).json({ error: 'Failed to parse wine data', raw: content1 });
             return;
         }
 
-        res.json({ success: true, data: wineData });
+        const confidence = wineData.confidence || 0;
+        let grounded = false;
+
+        // Step 2: If low confidence, retry WITH grounding
+        if (confidence < 70) {
+            console.log(`🔎 Step 2: confidence ${confidence} < 70, retrying with grounding...`);
+            const modelGrounded = genAI.getGenerativeModel({
+                model: 'gemini-2.5-flash',
+                tools: [{ googleSearch: {} }]
+            });
+
+            const result2 = await modelGrounded.generateContent(basePrompt);
+            const content2 = result2.response.text();
+            console.log('Step 2 grounded response:', content2);
+
+            try {
+                const jsonMatch2 = content2.match(/\{[\s\S]*\}/);
+                wineData = JSON.parse(jsonMatch2 ? jsonMatch2[0] : content2);
+                grounded = true;
+            } catch (parseError2) {
+                console.error('Step 2 JSON parse error, using step 1 result:', parseError2);
+            }
+        } else {
+            console.log(`✅ Step 1 sufficient: confidence ${confidence}`);
+        }
+
+        delete wineData.confidence;
+        res.json({ success: true, data: wineData, grounded });
 
     } catch (error) {
         console.error('Wine search error:', error);
