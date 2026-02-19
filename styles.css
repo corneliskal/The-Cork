@@ -1547,65 +1547,166 @@ body {
 }
 
 /* Drink Window */
-.detail-drink-window {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 0;
+/* Drinking Window — Dot Timeline */
+.detail-drink-window-card {
+    padding: 16px 0;
     border-bottom: 1px solid #f0ece7;
 }
 
-.detail-drink-icon {
-    width: 32px;
-    height: 32px;
+.dw-card-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #b5a898;
+    margin-bottom: 12px;
+}
+
+.dw-timeline-container {
+    position: relative;
+}
+
+.dw-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    justify-content: space-between;
+    margin-bottom: 14px;
 }
 
-.detail-drink-text {
-    flex: 1;
-}
-
-.detail-drink-label {
+.dw-status {
+    font-family: 'Nunito Sans', sans-serif;
     font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: #b5a898;
-}
-
-.detail-drink-range {
-    font-size: 15px;
-    font-weight: 600;
-    color: #2c1810;
-}
-
-.detail-drink-badge {
+    font-weight: 700;
+    letter-spacing: 0.5px;
     padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 600;
     border-radius: 12px;
 }
+.dw-status.dw-too-young   { color: #8A8278; background: rgba(138,130,120, 0.08); }
+.dw-status.dw-opening     { color: #8B7444; background: rgba(201,169,110, 0.1); }
+.dw-status.dw-drinking-well { color: #8B7444; background: rgba(201,169,110, 0.12); }
+.dw-status.dw-peak        { color: #722F37; background: rgba(114,47,55, 0.08); }
+.dw-status.dw-past-peak   { color: #9B4049; background: rgba(155,64,73, 0.08); }
+.dw-status.dw-drink-soon  { color: #9B4049; background: rgba(155,64,73, 0.1); }
+.dw-status.dw-decline     { color: #8A8278; background: rgba(138,130,120, 0.08); }
 
-.detail-drink-badge.status-perfect {
-    background: #e8f5e2;
-    color: #3a7d2c;
+.dw-hint {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    color: rgba(92,86,78, 0.5);
 }
 
-.detail-drink-badge.status-soon {
-    background: rgba(255, 149, 0, 0.15);
-    color: var(--system-orange);
+/* Timeline track */
+.dw-track {
+    position: relative;
+    height: 38px;
+    margin: 0 6px;
+}
+.dw-track::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(201,169,110, 0.15);
+    transform: translateY(-50%);
 }
 
-.detail-drink-badge.status-early {
-    background: rgba(0, 122, 255, 0.12);
-    color: var(--system-blue);
+/* Best range band */
+.dw-best {
+    position: absolute;
+    top: 50%;
+    height: 7px;
+    border-radius: 3.5px;
+    background: rgba(201,169,110, 0.1);
+    transform: translateY(-50%);
 }
 
-.detail-drink-badge.status-past {
-    background: rgba(255, 59, 48, 0.1);
-    color: var(--system-red);
+/* Peak range band */
+.dw-peak-band {
+    position: absolute;
+    top: 50%;
+    height: 11px;
+    border-radius: 5.5px;
+    background: linear-gradient(90deg, rgba(201,169,110, 0.2), rgba(201,169,110, 0.35), rgba(201,169,110, 0.2));
+    transform: translateY(-50%);
+}
+
+/* Milestone dots */
+.dw-dot {
+    position: absolute;
+    top: 50%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+.dw-dot.minor {
+    width: 5px;
+    height: 5px;
+    background: rgba(138,130,120, 0.3);
+}
+.dw-dot.pk {
+    width: 7px;
+    height: 7px;
+    background: #c9a96e;
+    box-shadow: 0 0 8px rgba(201,169,110, 0.15);
+}
+
+/* NOW diamond marker */
+.dw-now {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 2;
+}
+.dw-diamond {
+    width: 8px;
+    height: 8px;
+    background: #722F37;
+    border: 1.5px solid #9B4049;
+    transform: rotate(45deg);
+    box-shadow: 0 0 10px rgba(114,47,55, 0.2);
+}
+.dw-stem {
+    width: 1px;
+    height: 18px;
+    background: linear-gradient(to bottom, #9B4049, transparent);
+    margin-top: 2px;
+}
+
+/* Year labels */
+.dw-labels {
+    position: relative;
+    height: 28px;
+    margin: 4px 6px 0;
+}
+.dw-yr {
+    position: absolute;
+    font-family: ui-monospace, monospace;
+    font-size: 9px;
+    color: rgba(92,86,78, 0.5);
+    transform: translateX(-50%);
+    top: 4px;
+}
+.dw-yr.now {
+    font-family: 'Outfit', sans-serif;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #9B4049;
+    opacity: 0.6;
+}
+.dw-yr.pk {
+    color: #8B7444;
+}
+
+.dw-no-data {
+    font-size: 13px;
+    color: #b5a898;
 }
 
 /* Store */
@@ -2908,95 +3009,15 @@ body {
     white-space: nowrap;
 }
 
-.wine-drink-status.status-perfect {
-    background: rgba(52, 199, 89, 0.15);
-    color: var(--system-green);
-}
+.wine-drink-status.dw-peak        { background: rgba(114,47,55, 0.08); color: #722F37; }
+.wine-drink-status.dw-drinking-well { background: rgba(201,169,110, 0.12); color: #8B7444; }
+.wine-drink-status.dw-drink-soon  { background: rgba(155,64,73, 0.1); color: #9B4049; }
+.wine-drink-status.dw-past-peak   { background: rgba(155,64,73, 0.08); color: #9B4049; }
+.wine-drink-status.dw-opening     { background: rgba(201,169,110, 0.1); color: #8B7444; }
+.wine-drink-status.dw-too-young   { background: rgba(138,130,120, 0.08); color: #8A8278; }
+.wine-drink-status.dw-decline     { background: rgba(138,130,120, 0.08); color: #8A8278; }
 
-.wine-drink-status.status-soon {
-    background: rgba(255, 149, 0, 0.15);
-    color: var(--system-orange);
-}
-
-.wine-drink-status.status-early {
-    background: rgba(0, 122, 255, 0.12);
-    color: var(--system-blue);
-}
-
-.wine-drink-status.status-past {
-    background: rgba(255, 59, 48, 0.1);
-    color: var(--system-red);
-}
-
-/* ============================
-   Drink Window Display (Detail Modal)
-   ============================ */
-
-.detail-drink-window {
-    padding: var(--space-16);
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
-    margin-bottom: var(--space-20);
-}
-
-.drink-window-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-8);
-    margin-bottom: var(--space-8);
-}
-
-.drink-window-icon {
-    font-size: 1rem;
-}
-
-.drink-window-label {
-    font-size: var(--font-footnote);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: var(--label-secondary);
-}
-
-.drink-window-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-12);
-}
-
-.drink-window-years {
-    font-size: var(--font-title3);
-    font-weight: 600;
-    color: var(--label-primary);
-}
-
-.drink-status-badge {
-    font-size: var(--font-caption1);
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 100px;
-}
-
-.drink-status-badge.status-perfect {
-    background: rgba(52, 199, 89, 0.15);
-    color: var(--system-green);
-}
-
-.drink-status-badge.status-soon {
-    background: rgba(255, 149, 0, 0.15);
-    color: var(--system-orange);
-}
-
-.drink-status-badge.status-early {
-    background: rgba(0, 122, 255, 0.12);
-    color: var(--system-blue);
-}
-
-.drink-status-badge.status-past {
-    background: rgba(255, 59, 48, 0.1);
-    color: var(--system-red);
-}
+/* Drink Window styles moved to dot timeline section above (.dw-*) */
 
 .form-row {
     display: grid;

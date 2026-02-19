@@ -1240,7 +1240,24 @@ class WineCellar {
 
             const enrichId = Date.now().toString();
             const chars = wineData.characteristics || {};
-            const drinkWindow = wineData.year ? this.estimateDrinkWindow(wineData) : {};
+            const estWindow = wineData.year ? this.estimateDrinkWindow(wineData) : {};
+            // Build drinkingWindow from new format, old format, or local estimate
+            let drinkingWindow = null;
+            let drinkFrom = null;
+            let drinkUntil = null;
+            if (wineData.drinking_window) {
+                drinkingWindow = wineData.drinking_window;
+                drinkFrom = drinkingWindow.bestFrom;
+                drinkUntil = drinkingWindow.bestUntil;
+            } else if (wineData.drinkFrom) {
+                drinkFrom = wineData.drinkFrom;
+                drinkUntil = wineData.drinkUntil;
+                drinkingWindow = this.mapLegacyDrinkWindow(drinkFrom, drinkUntil);
+            } else if (estWindow.from) {
+                drinkFrom = estWindow.from;
+                drinkUntil = estWindow.until;
+                drinkingWindow = this.mapLegacyDrinkWindow(drinkFrom, drinkUntil);
+            }
             const savedWine = {
                 id: enrichId,
                 enrichId: enrichId,
@@ -1256,8 +1273,9 @@ class WineCellar {
                 price: null,
                 quantity: 1,
                 store: null,
-                drinkFrom: wineData.drinkFrom || drinkWindow.from || null,
-                drinkUntil: wineData.drinkUntil || drinkWindow.until || null,
+                drinkFrom: drinkFrom,
+                drinkUntil: drinkUntil,
+                drinkingWindow: drinkingWindow,
                 notes: wineData.notes || null,
                 image: this.currentImage,
                 addedAt: new Date().toISOString()
@@ -1343,8 +1361,16 @@ class WineCellar {
                     if (deepData.characteristics.alcohol_pct) updates.alcohol = deepData.characteristics.alcohol_pct;
                 }
                 if (deepData.notes) updates.notes = deepData.notes;
-                if (deepData.drinkFrom) updates.drinkFrom = deepData.drinkFrom;
-                if (deepData.drinkUntil) updates.drinkUntil = deepData.drinkUntil;
+                // Drinking window: new format or fallback from old drinkFrom/drinkUntil
+                if (deepData.drinking_window) {
+                    updates.drinkingWindow = deepData.drinking_window;
+                    updates.drinkFrom = deepData.drinking_window.bestFrom;
+                    updates.drinkUntil = deepData.drinking_window.bestUntil;
+                } else if (deepData.drinkFrom) {
+                    updates.drinkFrom = deepData.drinkFrom;
+                    updates.drinkUntil = deepData.drinkUntil;
+                    updates.drinkingWindow = this.mapLegacyDrinkWindow(deepData.drinkFrom, deepData.drinkUntil);
+                }
                 if (deepData.expert_ratings && deepData.expert_ratings.length > 0) {
                     updates.expertRatings = deepData.expert_ratings;
                 }
@@ -1854,6 +1880,14 @@ class WineCellar {
             image: this.currentImage,
             addedAt: this.editMode ? this.wines.find(w => w.id === this.currentWineId)?.addedAt : new Date().toISOString()
         };
+        // Preserve existing drinkingWindow or build from drinkFrom/drinkUntil
+        if (this.editMode) {
+            const existing = this.wines.find(w => w.id === this.currentWineId);
+            wineData.drinkingWindow = existing?.drinkingWindow || null;
+        }
+        if (wineData.drinkFrom && wineData.drinkUntil) {
+            wineData.drinkingWindow = this.mapLegacyDrinkWindow(wineData.drinkFrom, wineData.drinkUntil);
+        }
 
         if (this.editMode) {
             const index = this.wines.findIndex(w => w.id === this.currentWineId);
@@ -1940,21 +1974,21 @@ class WineCellar {
                 const statusB = this.getDrinkStatus(b);
 
                 // Priority order: perfect > soon > early > past > unknown
-                const priority = { perfect: 0, soon: 1, early: 2, past: 3, unknown: 4 };
-                const prioA = priority[statusA.status];
-                const prioB = priority[statusB.status];
+                const priority = { 'peak': 0, 'drinking-well': 1, 'drink-soon': 2, 'past-peak': 3, 'opening': 4, 'too-young': 5, 'decline': 6, 'unknown': 7 };
+                const prioA = priority[statusA.status] ?? 7;
+                const prioB = priority[statusB.status] ?? 7;
 
                 if (prioA !== prioB) {
                     return prioA - prioB;
                 }
 
-                // Within same status, sort by drinkUntil (earliest first for perfect/soon)
-                if (statusA.status === 'perfect' || statusA.status === 'soon') {
+                // Within same status, sort by drinkUntil (earliest first for peak/drink-soon)
+                if (statusA.status === 'peak' || statusA.status === 'drink-soon') {
                     return (a.drinkUntil || 9999) - (b.drinkUntil || 9999);
                 }
 
-                // For early wines, sort by drinkFrom (soonest first)
-                if (statusA.status === 'early') {
+                // For young wines, sort by drinkFrom (soonest first)
+                if (statusA.status === 'too-young' || statusA.status === 'opening') {
                     return (a.drinkFrom || 9999) - (b.drinkFrom || 9999);
                 }
 
@@ -2150,9 +2184,10 @@ class WineCellar {
                             const year = await this.promptForYear(wineId);
                             if (year) {
                                 wine.year = year;
-                                const drinkWindow = this.estimateDrinkWindow(wine);
-                                wine.drinkFrom = drinkWindow.from;
-                                wine.drinkUntil = drinkWindow.until;
+                                const estWindow = this.estimateDrinkWindow(wine);
+                                wine.drinkFrom = estWindow.from;
+                                wine.drinkUntil = estWindow.until;
+                                wine.drinkingWindow = this.mapLegacyDrinkWindow(estWindow.from, estWindow.until);
                                 const enrichId = 'enrich_' + Date.now();
                                 wine.enrichId = enrichId;
                                 await this.saveWines();
@@ -2318,22 +2353,14 @@ class WineCellar {
         document.getElementById('detailTannins').style.width = `${wine.tannins * 20}%`;
         document.getElementById('detailAcidity').style.width = `${wine.acidity * 20}%`;
 
-        // Drink window
+        // Drink window — dot timeline
         const drinkWindowSection = document.getElementById('detailDrinkWindowSection');
-        const drinkWindowDisplay = this.getDrinkWindowDisplay(wine);
-        if (drinkWindowDisplay) {
-            drinkWindowSection.style.display = 'flex';
-            document.getElementById('detailDrinkWindow').textContent = drinkWindowDisplay;
-
-            const drinkStatus = this.getDrinkStatus(wine);
-            const statusBadge = document.getElementById('detailDrinkStatus');
-            if (drinkStatus.label) {
-                statusBadge.textContent = drinkStatus.label;
-                statusBadge.className = `detail-drink-badge ${drinkStatus.class}`;
-                statusBadge.style.display = 'inline-block';
-            } else {
-                statusBadge.style.display = 'none';
-            }
+        const timelineContainer = document.getElementById('detailDrinkTimeline');
+        const w = this.getWineWindow(wine);
+        if (w) {
+            drinkWindowSection.style.display = '';
+            timelineContainer.innerHTML = '';
+            this.renderDotTimeline(timelineContainer, wine);
         } else {
             drinkWindowSection.style.display = 'none';
         }
@@ -3085,42 +3112,139 @@ class WineCellar {
     // Drink Window Helpers
     // ============================
 
+    getWineWindow(wine) {
+        if (wine.drinkingWindow) return wine.drinkingWindow;
+        if (wine.drinkFrom || wine.drinkUntil) {
+            return this.mapLegacyDrinkWindow(wine.drinkFrom, wine.drinkUntil);
+        }
+        return null;
+    }
+
+    mapLegacyDrinkWindow(drinkFrom, drinkUntil) {
+        if (!drinkFrom && !drinkUntil) return null;
+        const from = drinkFrom || drinkUntil - 5;
+        const until = drinkUntil || drinkFrom + 10;
+        const range = until - from;
+        return {
+            canDrinkFrom: from - 2,
+            bestFrom: from,
+            peakFrom: Math.round(from + range * 0.3),
+            peakUntil: Math.round(from + range * 0.7),
+            bestUntil: until,
+            canDrinkUntil: until + 3
+        };
+    }
+
     getDrinkStatus(wine) {
-        if (!wine.drinkFrom && !wine.drinkUntil) {
-            return { status: 'unknown', label: null, class: '' };
-        }
+        const w = this.getWineWindow(wine);
+        if (!w) return { status: 'unknown', label: null, class: '' };
 
-        const currentYear = new Date().getFullYear();
-        const drinkFrom = wine.drinkFrom || currentYear;
-        const drinkUntil = wine.drinkUntil || currentYear + 50;
+        const now = new Date().getFullYear();
+        if (now < w.canDrinkFrom) return { status: 'too-young', label: 'Too Young', class: 'dw-too-young' };
+        if (now < w.bestFrom)     return { status: 'opening', label: 'Opening Up', class: 'dw-opening' };
+        if (now < w.peakFrom)     return { status: 'drinking-well', label: 'Drinking Well', class: 'dw-drinking-well' };
+        if (now <= w.peakUntil)   return { status: 'peak', label: 'At Peak', class: 'dw-peak' };
+        if (now <= w.bestUntil)   return { status: 'past-peak', label: 'Past Peak', class: 'dw-past-peak' };
+        if (now <= w.canDrinkUntil) return { status: 'drink-soon', label: 'Drink Soon', class: 'dw-drink-soon' };
+        return { status: 'decline', label: 'In Decline', class: 'dw-decline' };
+    }
 
-        if (currentYear < drinkFrom) {
-            const yearsToWait = drinkFrom - currentYear;
-            return {
-                status: 'early',
-                label: yearsToWait === 1 ? '1 year to go' : `${yearsToWait} years to go`,
-                class: 'status-early'
-            };
-        } else if (currentYear > drinkUntil) {
-            return { status: 'past', label: 'Past peak', class: 'status-past' };
-        } else if (currentYear >= drinkUntil - 1) {
-            return { status: 'soon', label: 'Drink soon', class: 'status-soon' };
-        } else {
-            return { status: 'perfect', label: 'Drink now', class: 'status-perfect' };
-        }
+    getDrinkHint(wine) {
+        const w = this.getWineWindow(wine);
+        if (!w) return '';
+        const now = new Date().getFullYear();
+        const yearsToPeak = w.peakFrom - now;
+        if (yearsToPeak > 0) return `${yearsToPeak} yr to peak`;
+        if (now <= w.peakUntil) return 'drink now';
+        if (now <= w.bestUntil) return 'drink soon';
+        return 'past prime';
     }
 
     getDrinkWindowDisplay(wine) {
-        if (!wine.drinkFrom && !wine.drinkUntil) {
-            return null;
+        const w = this.getWineWindow(wine);
+        if (!w) return null;
+        return `${w.bestFrom} — ${w.bestUntil}`;
+    }
+
+    renderDotTimeline(container, wine) {
+        const w = this.getWineWindow(wine);
+        if (!w) {
+            container.innerHTML = '<span class="dw-no-data">No window data</span>';
+            return;
         }
-        if (wine.drinkFrom && wine.drinkUntil) {
-            return `${wine.drinkFrom} — ${wine.drinkUntil}`;
+
+        const currentYear = new Date().getFullYear();
+        const total = w.canDrinkUntil - w.canDrinkFrom;
+        if (total <= 0) return;
+        const pct = (year) => Math.max(0, Math.min(100, ((year - w.canDrinkFrom) / total) * 100));
+
+        const status = this.getDrinkStatus(wine);
+        const hint = this.getDrinkHint(wine);
+
+        // Header row: status badge + hint
+        const header = document.createElement('div');
+        header.className = 'dw-header';
+        header.innerHTML = `
+            <span class="dw-status ${status.class}">${status.label}</span>
+            <span class="dw-hint">${hint}</span>
+        `;
+        container.appendChild(header);
+
+        // Timeline track
+        const track = document.createElement('div');
+        track.className = 'dw-track';
+
+        // Best range band
+        const bestLeft = pct(w.bestFrom);
+        const bestWidth = pct(w.bestUntil) - bestLeft;
+        track.innerHTML += `<div class="dw-best" style="left:${bestLeft}%;width:${bestWidth}%"></div>`;
+
+        // Peak range band
+        const peakLeft = pct(w.peakFrom);
+        const peakWidth = pct(w.peakUntil) - peakLeft;
+        track.innerHTML += `<div class="dw-peak-band" style="left:${peakLeft}%;width:${peakWidth}%"></div>`;
+
+        // Milestone dots
+        const dots = [
+            { year: w.canDrinkFrom, cls: 'minor' },
+            { year: w.bestFrom, cls: 'minor' },
+            { year: w.peakFrom, cls: 'pk' },
+            { year: w.peakUntil, cls: 'pk' },
+            { year: w.bestUntil, cls: 'minor' },
+            { year: w.canDrinkUntil, cls: 'minor' },
+        ];
+        dots.forEach(d => {
+            track.innerHTML += `<div class="dw-dot ${d.cls}" style="left:${pct(d.year)}%"></div>`;
+        });
+
+        // NOW diamond marker
+        const clamped = Math.max(w.canDrinkFrom, Math.min(w.canDrinkUntil, currentYear));
+        if (currentYear >= w.canDrinkFrom - 3 && currentYear <= w.canDrinkUntil + 5) {
+            track.innerHTML += `<div class="dw-now" style="left:${pct(clamped)}%"><div class="dw-diamond"></div><div class="dw-stem"></div></div>`;
         }
-        if (wine.drinkFrom) {
-            return `Vanaf ${wine.drinkFrom}`;
+
+        container.appendChild(track);
+
+        // Year labels
+        const labels = document.createElement('div');
+        labels.className = 'dw-labels';
+        const peakMid = Math.round((w.peakFrom + w.peakUntil) / 2);
+        const labelData = [
+            { year: w.canDrinkFrom, cls: '' },
+            { year: peakMid, cls: 'pk' },
+            { year: w.canDrinkUntil, cls: '' }
+        ];
+        // Add "now" label if not too close to others
+        const nowPct = pct(currentYear);
+        const tooClose = labelData.some(l => Math.abs(pct(l.year) - nowPct) < 12);
+        if (!tooClose && currentYear >= w.canDrinkFrom && currentYear <= w.canDrinkUntil) {
+            labelData.push({ year: currentYear, cls: 'now' });
         }
-        return `Tot ${wine.drinkUntil}`;
+        labelData.sort((a, b) => a.year - b.year);
+        labelData.forEach(l => {
+            labels.innerHTML += `<span class="dw-yr ${l.cls}" style="left:${pct(l.year)}%">${l.year}</span>`;
+        });
+        container.appendChild(labels);
     }
 
     // ============================

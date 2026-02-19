@@ -94,18 +94,28 @@ exports.analyzeWineLabel = functions.https.onRequest(async (req, res) => {
         "acidity": 1-5
     },
     "notes": "brief tasting notes or description based on the wine style",
-    "drinkFrom": year as number (estimated optimal drinking window start),
-    "drinkUntil": year as number (estimated optimal drinking window end)
+    "drinking_window": {
+        "canDrinkFrom": year as number,
+        "bestFrom": year as number,
+        "peakFrom": year as number,
+        "peakUntil": year as number,
+        "bestUntil": year as number,
+        "canDrinkUntil": year as number
+    }
 }
 
-For drinkFrom and drinkUntil, estimate based on wine type, grape variety, region, and vintage:
-- Simple white/rosé wines: drink within 1-3 years of vintage
-- Quality white wines (Burgundy, Riesling): 3-10 years
-- Light red wines (Beaujolais, Pinot Noir): 2-7 years
-- Medium red wines (Chianti, Rioja): 5-15 years
-- Full-bodied reds (Bordeaux, Barolo): 10-30+ years
-- Sparkling wines: 1-5 years (vintage Champagne: 10-20 years)
-- Dessert wines: 5-50+ years depending on quality
+For drinking_window, estimate based on wine type, grape variety, region, and vintage:
+- canDrinkFrom/canDrinkUntil: the full possible drinking range
+- bestFrom/bestUntil: when the wine is drinking well
+- peakFrom/peakUntil: the optimal sweet spot (middle third of best range)
+Guidelines:
+- Simple white/rosé wines: best 1-3 years, can drink ±1 year buffer
+- Quality white wines (Burgundy, Riesling): best 3-10 years, can drink ±2 years
+- Light red wines (Beaujolais, Pinot Noir): best 2-7 years, can drink ±2 years
+- Medium red wines (Chianti, Rioja): best 5-15 years, can drink ±3 years
+- Full-bodied reds (Bordeaux, Barolo): best 10-30+ years, can drink ±5 years
+- Sparkling wines: best 1-5 years (vintage Champagne: 10-20 years)
+- Dessert wines: best 5-50+ years depending on quality
 
 Naming examples:
 - Château Pétrus label → name: "Pétrus", producer: "Château Pétrus"
@@ -489,6 +499,11 @@ INSTRUCTIONS:
 4. Calculate 'boldness', 'tannins', and 'acidity' based on the technical sheet or professional tasting notes.
 5. If the wine is 'NV' (Non-Vintage), use the most recent disgorgement or release data available.
 6. If no professional reviews exist for this wine, omit expert_ratings entirely and estimate characteristics based on grape, region and vintage.
+7. For the drinking_window, differentiate between:
+   - canDrinkFrom/canDrinkUntil: the full possible range
+   - bestFrom/bestUntil: when the wine is drinking well
+   - peakFrom/peakUntil: the optimal sweet spot
+   Base these on expert consensus. If only a single window is mentioned (e.g. "2028-2040"), set bestFrom/bestUntil to that range and estimate peak as the middle third, with canDrink as ±3-5 years buffer depending on wine type and structure.
 
 Return ONLY a JSON object with this structure:
 {
@@ -508,8 +523,14 @@ Return ONLY a JSON object with this structure:
         "alcohol_pct": "alcohol percentage as string e.g. 13.5%"
     },
     "notes": "concise summary of flavor profile",
-    "drinkFrom": year as number (optimal drinking window start),
-    "drinkUntil": year as number (optimal drinking window end)
+    "drinking_window": {
+        "canDrinkFrom": year as number,
+        "bestFrom": year as number,
+        "peakFrom": year as number,
+        "peakUntil": year as number,
+        "bestUntil": year as number,
+        "canDrinkUntil": year as number
+    }
 }
 
 If no professional reviews exist, omit the expert_ratings field entirely.
