@@ -1348,6 +1348,8 @@ class WineCellar {
                 if (deepData.expert_ratings && deepData.expert_ratings.length > 0) {
                     updates.expertRatings = deepData.expert_ratings;
                 }
+                if (deepData.grape && !wineData.grape) updates.grape = deepData.grape;
+                if (deepData.region && !wineData.region) updates.region = deepData.region;
 
                 if (Object.keys(updates).length > 0) {
                     console.log('📝 Deep analysis klaar (achtergrond):', Object.keys(updates).join(', '));
