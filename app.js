@@ -303,21 +303,6 @@ class WineCellar {
             this.storage = firebase.storage();
             this.updateSyncStatus('connecting');
 
-            // Handle redirect result (for mobile sign-in)
-            try {
-                const result = await firebase.auth().getRedirectResult();
-                if (result.user) {
-                    console.log('Redirect sign-in successful:', result.user.displayName);
-                    this.showToast(`Signed in as ${result.user.displayName}`);
-                }
-            } catch (redirectError) {
-                console.error('Redirect result error:', redirectError);
-                // Don't show error for initial page load (no redirect pending)
-                if (redirectError.code !== 'auth/null-user') {
-                    this.showToast('Sign in failed:' + redirectError.message);
-                }
-            }
-
             // Listen for auth state changes
             firebase.auth().onAuthStateChanged((user) => {
                 if (user) {
@@ -353,18 +338,9 @@ class WineCellar {
             this.updateSyncStatus('connecting');
             const provider = new firebase.auth.GoogleAuthProvider();
 
-            // Check if we're on a mobile device - use redirect for better compatibility
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-            if (isMobile) {
-                // Use redirect for mobile (more reliable on iOS Safari)
-                await firebase.auth().signInWithRedirect(provider);
-                // Note: page will redirect, result handled in initFirebase
-            } else {
-                // Use popup for desktop (faster UX)
-                const result = await firebase.auth().signInWithPopup(provider);
-                this.showToast(`Signed in as ${result.user.displayName}`);
-            }
+            // Always use popup — signInWithRedirect breaks on iOS Safari (ITP blocks cookies)
+            const result = await firebase.auth().signInWithPopup(provider);
+            this.showToast(`Signed in as ${result.user.displayName}`);
         } catch (error) {
             console.error('Google sign-in error:', error);
             if (error.code !== 'auth/popup-closed-by-user') {
