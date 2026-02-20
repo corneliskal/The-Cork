@@ -5,10 +5,9 @@ const cors = require('cors')({ origin: true });
 
 admin.initializeApp();
 
-// Get API keys from Firebase environment config
-// Set these with: firebase functions:config:set gemini.key="AIza..."
-const getGeminiKey = () => functions.config().gemini?.key;
-const getSerperKey = () => functions.config().serper?.key;
+// Get API keys from environment variables (.env file)
+const getGeminiKey = () => process.env.GEMINI_KEY;
+const getSerperKey = () => process.env.SERPER_KEY;
 
 // Serper.dev web search — used as cheap RAG alternative to Gemini grounding
 async function serperWebSearch(query, serperKey, num = 5) {
