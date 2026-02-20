@@ -1271,14 +1271,8 @@ class WineCellar {
                 this.showToast('Wine recognized and saved!');
             }
 
-            // Upload label image to Storage in background
-            if (this.isBase64Image(savedWine.image)) {
-                this.uploadImageToStorage(enrichId, savedWine.image).then(url => {
-                    if (url) this.updateSavedWine(enrichId, { image: url });
-                });
-            }
-
             // Start prijs + foto ophalen op de achtergrond
+            // (image upload happens inside enrichment after Serper search)
             this.enrichWineInBackground(enrichId, wineData);
 
         } catch (error) {
@@ -1390,6 +1384,14 @@ class WineCellar {
                 // Upload to Storage, fall back to base64 if upload fails
                 const url = await this.uploadImageToStorage(enrichId, imageBase64);
                 this.updateSavedWine(enrichId, { image: url || imageBase64 });
+            } else {
+                // No product image found — upload camera photo to Storage
+                const wine = this.wines.find(w => w.enrichId === enrichId)
+                    || this.wishlist.find(w => w.enrichId === enrichId);
+                if (wine && this.isBase64Image(wine.image)) {
+                    const url = await this.uploadImageToStorage(enrichId, wine.image);
+                    if (url) this.updateSavedWine(enrichId, { image: url });
+                }
             }
             this.checkEnrichmentDone(enrichId);
         });
