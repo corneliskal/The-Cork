@@ -2,41 +2,29 @@
   "functions": {
     "source": "functions"
   },
-  "storage": {
-    "rules": "storage.rules"
-  },
   "hosting": [
     {
-      "site": "the-cork-claude",
+      "target": "the-cork-v2",
       "public": ".",
       "ignore": [
         "firebase.json",
         "**/.*",
         "**/node_modules/**",
         "functions/**"
-      ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
       ]
     },
     {
-      "site": "dev-the-cork-claude",
+      "target": "dev-the-cork-v2",
       "public": ".",
       "ignore": [
         "firebase.json",
         "**/.*",
         "**/node_modules/**",
         "functions/**"
-      ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
       ]
     }
-  ]
+  ],
+  "database": {
+    "rules": "database.rules.json"
+  }
 }

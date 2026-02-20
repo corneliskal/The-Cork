@@ -1,17 +1,18 @@
 {
   "projects": {
-    "default": "the-cork-claude"
+    "default": "the-cork-v2"
   },
   "targets": {
-    "the-cork-claude": {
+    "the-cork-v2": {
       "hosting": {
-        "the-cork-claude": [
-          "the-cork-claude"
+        "the-cork-v2": [
+          "the-cork-v2"
         ],
-        "dev-the-cork-claude": [
-          "dev-the-cork-claude"
+        "dev-the-cork-v2": [
+          "dev-the-cork-v2"
         ]
       }
     }
-  }
+  },
+  "etags": {}
 }

@@ -7,25 +7,24 @@ const CONFIG = {
     // Firebase Configuration
     // ============================
     FIREBASE: {
-        apiKey: "AIzaSyCf49GNUSVnl5Va3waIGFU2WcZsqo8e6Z0",
-        authDomain: "thecork.corkapps.com",
-        databaseURL: "https://the-cork-claude-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "the-cork-claude",
-        storageBucket: "the-cork-claude.firebasestorage.app",
-        messagingSenderId: "315353039539",
-        appId: "1:315353039539:web:85f20655096ae78062e6c6",
-        measurementId: "G-T2WNRF19ZT"
+        apiKey: "AIzaSyBkWeQuul7Qmm6Z3YxWoVeORcceqjaZiTM",
+        authDomain: "the-cork-v2.firebaseapp.com",
+        databaseURL: "https://the-cork-v2-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "the-cork-v2",
+        storageBucket: "the-cork-v2.firebasestorage.app",
+        messagingSenderId: "232100497970",
+        appId: "1:232100497970:web:d0db58efb539e7abfc8a2b"
     },
 
     // ============================
     // Cloud Functions URLs
     // ============================
     FUNCTIONS: {
-        quickAnalyzeWineLabel: "https://us-central1-the-cork-claude.cloudfunctions.net/quickAnalyzeWineLabel",
-        analyzeWineLabel: "https://us-central1-the-cork-claude.cloudfunctions.net/analyzeWineLabel",
-        lookupWinePrice: "https://us-central1-the-cork-claude.cloudfunctions.net/lookupWinePrice",
-        searchWineImage: "https://us-central1-the-cork-claude.cloudfunctions.net/searchWineImage",
-        deepAnalyzeWineLabel: "https://us-central1-the-cork-claude.cloudfunctions.net/deepAnalyzeWineLabel",
-        health: "https://us-central1-the-cork-claude.cloudfunctions.net/health"
+        quickAnalyzeWineLabel: "https://us-central1-the-cork-v2.cloudfunctions.net/quickAnalyzeWineLabel",
+        analyzeWineLabel: "https://us-central1-the-cork-v2.cloudfunctions.net/analyzeWineLabel",
+        lookupWinePrice: "https://us-central1-the-cork-v2.cloudfunctions.net/lookupWinePrice",
+        searchWineImage: "https://us-central1-the-cork-v2.cloudfunctions.net/searchWineImage",
+        deepAnalyzeWineLabel: "https://us-central1-the-cork-v2.cloudfunctions.net/deepAnalyzeWineLabel",
+        health: "https://us-central1-the-cork-v2.cloudfunctions.net/health"
     }
 };
