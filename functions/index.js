@@ -10,6 +10,38 @@ admin.initializeApp();
 const getGeminiKey = () => functions.config().gemini?.key;
 const getSerperKey = () => functions.config().serper?.key;
 
+// Serper.dev web search — used as cheap RAG alternative to Gemini grounding
+async function serperWebSearch(query, serperKey, num = 5) {
+    const response = await fetch('https://google.serper.dev/search', {
+        method: 'POST',
+        headers: { 'X-API-KEY': serperKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: query, num })
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return formatSearchResults(data);
+}
+
+function formatSearchResults(data) {
+    const parts = [];
+    if (data.knowledgeGraph) {
+        const kg = data.knowledgeGraph;
+        parts.push(`[Knowledge Graph] ${kg.title || ''}: ${kg.description || ''}`);
+        if (kg.attributes) {
+            Object.entries(kg.attributes).forEach(([k, v]) => parts.push(`  ${k}: ${v}`));
+        }
+    }
+    if (data.answerBox) {
+        parts.push(`[Answer] ${data.answerBox.title || ''}: ${data.answerBox.answer || data.answerBox.snippet || ''}`);
+    }
+    if (data.organic) {
+        data.organic.forEach((r, i) => {
+            parts.push(`[${i + 1}] ${r.title}\n${r.snippet || ''}\nURL: ${r.link}`);
+        });
+    }
+    return parts.join('\n\n') || null;
+}
+
 // Middleware to verify Firebase Auth
 const verifyAuth = async (req, res) => {
     const authHeader = req.headers.authorization;
@@ -292,20 +324,12 @@ exports.lookupWinePrice = functions.https.onRequest((req, res) => {
 
             // Build search query
             const searchTerms = [producer, name, year, region].filter(Boolean).join(' ');
-            console.log('🍷 Gemini price lookup for:', searchTerms);
+            console.log('🍷 Price lookup for:', searchTerms);
 
-            // Initialize Gemini with Google Search grounding
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const model = genAI.getGenerativeModel({
-                model: 'gemini-2.5-flash',
-                tools: [{
-                    googleSearch: {}
-                }]
-            });
+            const serperKey = getSerperKey();
 
-            const prompt = `Search for the current retail price of this wine: "${searchTerms}"
-
-Look for prices on wine retailers, Vivino, Wine-Searcher, or other wine shops.
+            const pricePrompt = `Extract the current retail price of this wine from the search results below.
 Focus on European/Dutch prices in EUR (€).
 
 Return ONLY a JSON object with this format, no other text:
@@ -319,9 +343,35 @@ Return ONLY a JSON object with this format, no other text:
 If you cannot find a reliable price, return:
 {"price": null, "source": "not found", "confidence": "low"}`;
 
-            const result = await model.generateContent(prompt);
-            const content = result.response.text();
-            console.log('Gemini price response:', content);
+            let content;
+
+            // Try Serper RAG first (cheap), fallback to Gemini grounding
+            if (serperKey) {
+                const priceQuery = `${searchTerms} wine price EUR buy`;
+                console.log('🔎 Serper price search:', priceQuery);
+                const searchResults = await serperWebSearch(priceQuery, serperKey, 5);
+
+                if (searchResults) {
+                    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+                    const ragPrompt = `Wine: "${searchTerms}"\n\nWEB SEARCH RESULTS:\n${searchResults}\n\n${pricePrompt}`;
+                    const result = await model.generateContent(ragPrompt);
+                    content = result.response.text();
+                    console.log('Serper RAG price response:', content);
+                }
+            }
+
+            if (!content) {
+                // Fallback: Gemini grounding
+                console.log('🔎 Fallback: Gemini grounding for price');
+                const model = genAI.getGenerativeModel({
+                    model: 'gemini-2.5-flash',
+                    tools: [{ googleSearch: {} }]
+                });
+                const prompt = `Search for the current retail price of this wine: "${searchTerms}"\n\nLook for prices on wine retailers, Vivino, Wine-Searcher, or other wine shops.\nFocus on European/Dutch prices in EUR (€).\n\n${pricePrompt}`;
+                const result = await model.generateContent(prompt);
+                content = result.response.text();
+                console.log('Gemini grounded price response:', content);
+            }
 
             // Parse JSON from response
             let priceData = null;
@@ -525,24 +575,51 @@ Schema: {"name":"","producer":"","year":0,"region":"","grape":"","type":"red/whi
         const confidence = wineData.confidence || 0;
         let grounded = false;
 
-        // Step 2: If low confidence, retry WITH grounding
+        // Step 2: If low confidence, use Serper RAG (or fallback to grounding)
         if (confidence < 70) {
-            console.log(`🔎 Step 2: confidence ${confidence} < 70, retrying with grounding...`);
-            const modelGrounded = genAI.getGenerativeModel({
-                model: 'gemini-2.5-flash',
-                tools: [{ googleSearch: {} }]
-            });
+            const serperKey = getSerperKey();
+            let searchResults = null;
 
-            const result2 = await modelGrounded.generateContent(basePrompt);
-            const content2 = result2.response.text();
-            console.log('Step 2 grounded response:', content2);
+            if (serperKey) {
+                console.log(`🔎 Step 2: confidence ${confidence} < 70, searching with Serper...`);
+                const wineQuery = `${searchTerms} wine expert rating drinking window review`;
+                searchResults = await serperWebSearch(wineQuery, serperKey, 5);
+                if (searchResults) console.log('Serper results length:', searchResults.length, 'chars');
+            }
 
-            try {
-                const jsonMatch2 = content2.match(/\{[\s\S]*\}/);
-                wineData = JSON.parse(jsonMatch2 ? jsonMatch2[0] : content2);
-                grounded = true;
-            } catch (parseError2) {
-                console.error('Step 2 JSON parse error, using step 1 result:', parseError2);
+            if (searchResults) {
+                // RAG: feed search results as context to Gemini (no grounding needed)
+                const ragPrompt = basePrompt.replace('confidence":0}', '"}') + `\n\nWEB SEARCH RESULTS:\n${searchResults}`;
+                const result2 = await modelLight.generateContent(ragPrompt);
+                const content2 = result2.response.text();
+                console.log('Step 2 Serper RAG response:', content2);
+
+                try {
+                    const jsonMatch2 = content2.match(/\{[\s\S]*\}/);
+                    wineData = JSON.parse(jsonMatch2 ? jsonMatch2[0] : content2);
+                    grounded = true;
+                } catch (parseError2) {
+                    console.error('Step 2 RAG parse error, using step 1 result:', parseError2);
+                }
+            } else {
+                // Fallback: use Gemini grounding if Serper unavailable
+                console.log(`🔎 Step 2: Serper unavailable, falling back to Gemini grounding...`);
+                const modelGrounded = genAI.getGenerativeModel({
+                    model: 'gemini-2.5-flash',
+                    tools: [{ googleSearch: {} }]
+                });
+
+                const result2 = await modelGrounded.generateContent(basePrompt);
+                const content2 = result2.response.text();
+                console.log('Step 2 grounded response:', content2);
+
+                try {
+                    const jsonMatch2 = content2.match(/\{[\s\S]*\}/);
+                    wineData = JSON.parse(jsonMatch2 ? jsonMatch2[0] : content2);
+                    grounded = true;
+                } catch (parseError2) {
+                    console.error('Step 2 grounding parse error, using step 1 result:', parseError2);
+                }
             }
         } else {
             console.log(`✅ Step 1 sufficient: confidence ${confidence}`);
