@@ -8,7 +8,7 @@ const CONFIG = {
     // ============================
     FIREBASE: {
         apiKey: "AIzaSyBkWeQuul7Qmm6Z3YxWoVeORcceqjaZiTM",
-        authDomain: "the-cork-v2.firebaseapp.com",
+        authDomain: "thecork.corkapps.com",
         databaseURL: "https://the-cork-v2-default-rtdb.europe-west1.firebasedatabase.app",
         projectId: "the-cork-v2",
         storageBucket: "the-cork-v2.firebasestorage.app",
