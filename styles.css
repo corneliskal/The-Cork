@@ -1821,6 +1821,63 @@ body {
     color: #5a4a3e;
 }
 
+/* Enrichment Log (admin only) */
+.detail-enrichment-section {
+    padding: 12px 0;
+    border-bottom: 1px solid #f0ece7;
+}
+
+.detail-enrichment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.detail-enrichment-header .detail-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #b5a898;
+}
+
+.enrichment-toggle-icon {
+    font-size: 8px;
+    color: #b5a898;
+}
+
+.enrichment-log-content {
+    padding-top: 8px;
+}
+
+.enrichment-log-time {
+    font-size: 11px;
+    color: #b5a898;
+    margin-bottom: 8px;
+}
+
+.enrichment-log-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 3px 0;
+    font-size: 12px;
+}
+
+.enrichment-log-label {
+    color: #8a7a6e;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.enrichment-log-value {
+    color: #5a4a3e;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 11px;
+    text-align: right;
+}
+
 /* Cellar Count */
 .detail-cellar-label {
     font-size: 11px;

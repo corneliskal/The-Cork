@@ -272,6 +272,10 @@ class WineCellar {
         }
     }
 
+    get isAdmin() {
+        return this.userId === '9lcsHu9NN3clMBqzCqkQ3PrNdqQ2'
+    }
+
     // Get Firebase ID token for API calls
     async getIdToken() {
         const user = firebase.auth().currentUser;
@@ -1295,7 +1299,9 @@ class WineCellar {
         console.log('🔄 Background enrichment started for:', wineData.name);
 
         // Track welke wijn we verrijken (3 parallel tasks)
-        this.backgroundProcessing.set(enrichId, { details: true, price: true, image: true });
+        // enrichmentLog collects metadata from each step, saved when all done
+        const enrichmentLog = { timestamp: new Date().toISOString() }
+        this.backgroundProcessing.set(enrichId, { details: true, price: true, image: true, enrichmentLog });
         this.renderWineList(); // Toon spinner als wijn al opgeslagen is
 
         // Deep analysis: characteristics, notes, drink window via Gemini + Search
@@ -1318,11 +1324,13 @@ class WineCellar {
         }) : Promise.resolve(null);
 
         // Deep analysis verwerken wanneer klaar
-        detailsPromise.then(deepData => {
+        detailsPromise.then(result => {
             const proc = this.backgroundProcessing.get(enrichId);
             if (proc) proc.details = false;
 
-            if (deepData) {
+            if (result) {
+                if (result._log) enrichmentLog.deepAnalysis = result._log
+                const deepData = result.data
                 const updates = {};
                 if (deepData.characteristics) {
                     if (deepData.characteristics.boldness) updates.boldness = deepData.characteristics.boldness;
@@ -1362,22 +1370,28 @@ class WineCellar {
         });
 
         // Prijs verwerken wanneer klaar
-        pricePromise.then(priceData => {
+        pricePromise.then(result => {
             const proc = this.backgroundProcessing.get(enrichId);
             if (proc) proc.price = false;
 
-            if (priceData && priceData.price) {
-                const roundedPrice = Math.round(priceData.price);
-                console.log('💰 Prijs gevonden (achtergrond):', roundedPrice);
-                this.updateSavedWine(enrichId, { price: roundedPrice });
+            if (result) {
+                if (result._log) enrichmentLog.priceLookup = result._log
+                if (result.data && result.data.price) {
+                    const roundedPrice = Math.round(result.data.price);
+                    console.log('💰 Prijs gevonden (achtergrond):', roundedPrice);
+                    this.updateSavedWine(enrichId, { price: roundedPrice });
+                }
             }
             this.checkEnrichmentDone(enrichId);
         });
 
         // Foto verwerken wanneer klaar
-        imagePromise.then(async (imageBase64) => {
+        imagePromise.then(async (result) => {
             const proc = this.backgroundProcessing.get(enrichId);
             if (proc) proc.image = false;
+
+            const imageBase64 = result ? result.imageBase64 : null
+            if (result && result._log) enrichmentLog.imageSearch = result._log
 
             if (imageBase64) {
                 console.log('🖼️ Productfoto gevonden (achtergrond)');
@@ -1422,6 +1436,10 @@ class WineCellar {
     checkEnrichmentDone(enrichId) {
         const proc = this.backgroundProcessing.get(enrichId);
         if (proc && !proc.details && !proc.price && !proc.image) {
+            // Save enrichment log when all tasks are done
+            if (proc.enrichmentLog) {
+                this.updateSavedWine(enrichId, { enrichmentLog: proc.enrichmentLog })
+            }
             this.backgroundProcessing.delete(enrichId);
             this.renderWineList(); // Verwijder spinner
         }
@@ -1467,7 +1485,7 @@ class WineCellar {
             const result = await response.json();
             console.log('🍷 Price lookup result:', result);
 
-            return result.data;
+            return { data: result.data, _log: result._log };
         } catch (error) {
             console.error('Price lookup error:', error);
             return null;
@@ -1511,7 +1529,7 @@ class WineCellar {
             const result = await response.json();
             console.log('🖼️ Image search result:', result);
 
-            return result.data?.imageBase64 || null;
+            return { imageBase64: result.data?.imageBase64 || null, _log: result._log };
         } catch (error) {
             console.error('Image search error:', error);
             return null;
@@ -1542,7 +1560,7 @@ class WineCellar {
         if (!response.ok) return null;
 
         const result = await response.json();
-        return result.success ? result.data : null;
+        return result.success ? { data: result.data, _log: result._log } : null;
     }
 
     matchExistingWine(wineData) {
@@ -2363,9 +2381,70 @@ class WineCellar {
             notesSection.style.display = 'none';
         }
 
+        // Enrichment Log (admin only)
+        const enrichSection = document.getElementById('detailEnrichmentSection')
+        if (this.isAdmin && wine.enrichmentLog) {
+            enrichSection.style.display = ''
+            const content = document.getElementById('enrichmentLogContent')
+            const log = wine.enrichmentLog
+            content.innerHTML = this.renderEnrichmentLog(log)
+            // Reset toggle state
+            content.style.display = 'none'
+            const icon = enrichSection.querySelector('.enrichment-toggle-icon')
+            icon.textContent = '\u25B6'
+            document.getElementById('enrichmentToggle').onclick = () => {
+                if (content.style.display === 'none') {
+                    content.style.display = ''
+                    icon.textContent = '\u25BC'
+                } else {
+                    content.style.display = 'none'
+                    icon.textContent = '\u25B6'
+                }
+            }
+        } else {
+            enrichSection.style.display = 'none'
+        }
+
         // Quantity
         document.getElementById('detailQuantity').textContent = wine.quantity;
         this.openModal('detailModal');
+    }
+
+    renderEnrichmentLog(log) {
+        const dur = (ms) => ms ? `${(ms / 1000).toFixed(1)}s` : '?'
+        const rows = []
+
+        if (log.deepAnalysis) {
+            const d = log.deepAnalysis
+            let detail = `${dur(d.duration)}`
+            if (d.step1Confidence !== undefined) detail += ` · conf ${d.step1Confidence}`
+            if (d.groundingUsed) detail += ` → ${d.groundingMethod || 'search'}`
+            rows.push(['Deep Analysis', detail])
+        }
+        if (log.priceLookup) {
+            const p = log.priceLookup
+            let detail = `${dur(p.duration)} · ${p.searchMethod || '?'}`
+            if (p.shoppingResults) detail += ' · shop'
+            if (p.webResults) detail += ' · web'
+            rows.push(['Price', detail])
+        }
+        if (log.imageSearch) {
+            const i = log.imageSearch
+            let detail = `${dur(i.duration)}`
+            detail += i.found ? ` · ${i.candidatesFiltered}/${i.candidatesTotal} candidates` : ' · not found'
+            rows.push(['Image', detail])
+        }
+
+        const time = log.timestamp ? new Date(log.timestamp).toLocaleString('nl-NL') : ''
+        return `
+            <div class="enrichment-log-time">${time}</div>
+            ${rows.map(([label, value]) => `
+                <div class="enrichment-log-row">
+                    <span class="enrichment-log-label">${label}</span>
+                    <span class="enrichment-log-value">${value}</span>
+                </div>
+            `).join('')}
+        `
     }
 
     updateDetailQuantity(change) {

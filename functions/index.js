@@ -242,6 +242,7 @@ exports.quickAnalyzeWineLabel = functions.https.onRequest(async (req, res) => {
     }
 
     try {
+        const startTime = Date.now();
         const { imageBase64 } = req.body;
 
         if (!imageBase64) {
@@ -306,7 +307,11 @@ Only JSON, no other text.`;
             return;
         }
 
-        res.json({ success: true, data: wineData });
+        res.json({
+            success: true,
+            data: wineData,
+            _log: { duration: Date.now() - startTime, model: 'gemini-2.0-flash-lite' }
+        });
 
     } catch (error) {
         console.error('Quick scan error:', error);
@@ -335,6 +340,7 @@ exports.lookupWinePrice = functions.https.onRequest((req, res) => {
         }
 
         try {
+            const startTime = Date.now();
             const { name, producer, year, region } = req.body;
             if (!name) {
                 res.status(400).json({ error: 'Wine name is required' });
@@ -363,6 +369,9 @@ If you cannot find a reliable price, return:
 {"price": null, "source": "not found", "confidence": "low"}`;
 
             let content;
+            let searchMethod = null;
+            let hadShopping = false;
+            let hadWeb = false;
 
             // Try Serper shopping + web search (cheap), fallback to Gemini grounding
             if (serperKey) {
@@ -377,6 +386,8 @@ If you cannot find a reliable price, return:
                     serperWebSearch(webQuery, serperKey, 5, euOptions).catch(() => null)
                 ]);
 
+                hadShopping = !!shoppingResults;
+                hadWeb = !!webResults;
                 if (shoppingResults) console.log('🛒 Shopping results found');
                 if (webResults) console.log('🌐 Web results found');
 
@@ -386,6 +397,7 @@ If you cannot find a reliable price, return:
                 ].filter(Boolean).join('\n\n');
 
                 if (combinedResults) {
+                    searchMethod = 'serper';
                     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
                     const ragPrompt = `Wine: "${searchTerms}"\n\n${combinedResults}\n\n${pricePrompt}`;
                     const result = await model.generateContent(ragPrompt);
@@ -401,6 +413,7 @@ If you cannot find a reliable price, return:
                     model: 'gemini-2.5-flash',
                     tools: [{ googleSearch: {} }]
                 });
+                searchMethod = 'gemini-grounding';
                 const prompt = `Search for the current retail price of this wine: "${searchTerms}"\n\nLook for prices on wine retailers, Vivino, Wine-Searcher, or other wine shops.\nFocus on European/Dutch prices in EUR (€).\n\n${pricePrompt}`;
                 const result = await model.generateContent(prompt);
                 content = result.response.text();
@@ -421,7 +434,14 @@ If you cannot find a reliable price, return:
             res.json({
                 success: true,
                 data: priceData,
-                searchTerms: searchTerms
+                searchTerms: searchTerms,
+                _log: {
+                    duration: Date.now() - startTime,
+                    model: 'gemini-2.5-flash',
+                    searchMethod,
+                    shoppingResults: hadShopping,
+                    webResults: hadWeb
+                }
             });
 
         } catch (error) {
@@ -460,6 +480,7 @@ exports.searchWineImage = functions.https.onRequest(async (req, res) => {
     }
 
     try {
+        const startTime = Date.now();
         const { name, producer, year, type } = req.body;
         if (!name) {
             res.status(400).json({ error: 'Wine name is required' });
@@ -524,6 +545,13 @@ exports.searchWineImage = functions.https.onRequest(async (req, res) => {
                 imageUrl: usedImage?.imageUrl || null,
                 imageBase64: imageBase64,
                 source: usedImage?.source || null
+            },
+            _log: {
+                duration: Date.now() - startTime,
+                candidatesTotal: data.images?.length || 0,
+                candidatesFiltered: candidates.length,
+                found: !!usedImage,
+                imageSource: usedImage?.source || null
             }
         });
 
@@ -561,6 +589,7 @@ exports.deepAnalyzeWineLabel = functions.https.onRequest(async (req, res) => {
     }
 
     try {
+        const startTime = Date.now();
         const { name, producer, year, grape, region } = req.body;
 
         if (!name) {
@@ -612,19 +641,24 @@ Schema: {"name":"","producer":"","year":0,"region":"","grape":"","type":"red/whi
             return;
         }
 
-        const confidence = wineData.confidence || 0;
+        const step1Confidence = wineData.confidence || 0;
         let grounded = false;
+        let groundingMethod = null;
+        let serperResultsLen = 0;
 
         // Step 2: If low confidence, use Serper RAG (or fallback to grounding)
-        if (confidence < 70) {
+        if (step1Confidence < 70) {
             const serperKey = getSerperKey();
             let searchResults = null;
 
             if (serperKey) {
-                console.log(`🔎 Step 2: confidence ${confidence} < 70, searching with Serper...`);
+                console.log(`🔎 Step 2: confidence ${step1Confidence} < 70, searching with Serper...`);
                 const wineQuery = `${searchTerms} wine expert rating drinking window review`;
                 searchResults = await serperWebSearch(wineQuery, serperKey, 5);
-                if (searchResults) console.log('Serper results length:', searchResults.length, 'chars');
+                if (searchResults) {
+                    serperResultsLen = searchResults.length;
+                    console.log('Serper results length:', serperResultsLen, 'chars');
+                }
             }
 
             if (searchResults) {
@@ -644,6 +678,7 @@ ${searchResults}`;
                     const jsonMatch2 = content2.match(/\{[\s\S]*\}/);
                     wineData = JSON.parse(jsonMatch2 ? jsonMatch2[0] : content2);
                     grounded = true;
+                    groundingMethod = 'serper-rag';
                 } catch (parseError2) {
                     console.error('Step 2 RAG parse error, using step 1 result:', parseError2);
                 }
@@ -663,16 +698,29 @@ ${searchResults}`;
                     const jsonMatch2 = content2.match(/\{[\s\S]*\}/);
                     wineData = JSON.parse(jsonMatch2 ? jsonMatch2[0] : content2);
                     grounded = true;
+                    groundingMethod = 'gemini-search';
                 } catch (parseError2) {
                     console.error('Step 2 grounding parse error, using step 1 result:', parseError2);
                 }
             }
         } else {
-            console.log(`✅ Step 1 sufficient: confidence ${confidence}`);
+            console.log(`✅ Step 1 sufficient: confidence ${step1Confidence}`);
         }
 
         delete wineData.confidence;
-        res.json({ success: true, data: wineData, grounded });
+        res.json({
+            success: true,
+            data: wineData,
+            grounded,
+            _log: {
+                duration: Date.now() - startTime,
+                model: 'gemini-2.5-flash',
+                step1Confidence,
+                groundingUsed: grounded,
+                groundingMethod,
+                serperResultsLen
+            }
+        });
 
     } catch (error) {
         console.error('Wine search error:', error);

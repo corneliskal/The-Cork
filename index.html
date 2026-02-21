@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="The Cork">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="styles.css?v=64">
+    <link rel="stylesheet" href="styles.css?v=65">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -529,6 +529,14 @@
                         <div id="detailNotes" class="detail-notes-text"></div>
                     </div>
 
+                    <div id="detailEnrichmentSection" class="detail-enrichment-section" style="display:none">
+                        <div class="detail-enrichment-header" id="enrichmentToggle">
+                            <span class="detail-section-title">Enrichment Log</span>
+                            <span class="enrichment-toggle-icon">&#9654;</span>
+                        </div>
+                        <div id="enrichmentLogContent" class="enrichment-log-content" style="display:none"></div>
+                    </div>
+
                     <div class="detail-cellar-label">In Cellar</div>
                     <div class="detail-cellar-section">
                         <button class="detail-cellar-btn" id="detailDecrease">−</button>
@@ -856,7 +864,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
-    <script src="config.js?v=64"></script>
-    <script src="app.js?v=64"></script>
+    <script src="config.js?v=65"></script>
+    <script src="app.js?v=65"></script>
 </body>
 </html>
