@@ -1206,7 +1206,9 @@ class WineCellar {
         indicatorText.textContent = 'Analyzing wine label...';
 
         try {
-            const wineData = await this.callChatGPTVision(imageData);
+            const quickResult = await this.callChatGPTVision(imageData);
+            const wineData = quickResult.data;
+            const quickScanLog = quickResult._log;
 
             // Consistente naamgeving: vergelijk met bestaande wijnen in kelder
             const existingWine = this.matchExistingWine(wineData);
@@ -1278,7 +1280,7 @@ class WineCellar {
 
             // Start prijs + foto ophalen op de achtergrond
             // (image upload happens inside enrichment after Serper search)
-            this.enrichWineInBackground(enrichId, wineData);
+            this.enrichWineInBackground(enrichId, wineData, quickScanLog);
 
         } catch (error) {
             console.error('Vision API error:', error);
@@ -1296,12 +1298,18 @@ class WineCellar {
         }
     }
 
-    async enrichWineInBackground(enrichId, wineData) {
+    async enrichWineInBackground(enrichId, wineData, quickScanLog) {
         console.log('🔄 Background enrichment started for:', wineData.name);
 
         // Track welke wijn we verrijken (3 parallel tasks)
         // enrichmentLog collects metadata from each step, saved when all done
         const enrichmentLog = { timestamp: new Date().toISOString() }
+        if (quickScanLog) {
+            enrichmentLog.quickScan = {
+                ...quickScanLog,
+                result: { name: wineData.name, producer: wineData.producer, year: wineData.year, region: wineData.region, grape: wineData.grape, type: wineData.type }
+            }
+        }
         this.backgroundProcessing.set(enrichId, { details: true, price: true, image: true, enrichmentLog });
         this.renderWineList(); // Toon spinner als wijn al opgeslagen is
 
@@ -1330,8 +1338,19 @@ class WineCellar {
             if (proc) proc.details = false;
 
             if (result) {
-                if (result._log) enrichmentLog.deepAnalysis = result._log
                 const deepData = result.data
+                if (result._log) {
+                    enrichmentLog.deepAnalysis = {
+                        ...result._log,
+                        result: {
+                            name: deepData.name, producer: deepData.producer, type: deepData.type,
+                            grape: deepData.grape, region: deepData.region,
+                            expertRatings: deepData.expert_ratings || null,
+                            drinkFrom: deepData.drinking_window?.bestFrom, drinkUntil: deepData.drinking_window?.bestUntil,
+                            peakFrom: deepData.drinking_window?.peakFrom, peakUntil: deepData.drinking_window?.peakUntil
+                        }
+                    }
+                }
                 const updates = {};
                 if (deepData.characteristics) {
                     if (deepData.characteristics.boldness) updates.boldness = deepData.characteristics.boldness;
@@ -1377,7 +1396,12 @@ class WineCellar {
             if (proc) proc.price = false;
 
             if (result) {
-                if (result._log) enrichmentLog.priceLookup = result._log
+                if (result._log) {
+                    enrichmentLog.priceLookup = {
+                        ...result._log,
+                        result: result.data ? { price: result.data.price, source: result.data.source, confidence: result.data.confidence, priceRange: result.data.priceRange } : null
+                    }
+                }
                 if (result.data && result.data.price) {
                     const roundedPrice = Math.round(result.data.price);
                     console.log('💰 Prijs gevonden (achtergrond):', roundedPrice);
@@ -1792,7 +1816,7 @@ class WineCellar {
             throw new Error(result.error || 'Failed to analyze image');
         }
 
-        return result.data;
+        return { data: result.data, _log: result._log };
     }
 
     generateDemoWineData() {
@@ -2414,39 +2438,96 @@ class WineCellar {
 
     renderEnrichmentLog(log) {
         const dur = (ms) => ms ? `${(ms / 1000).toFixed(1)}s` : '?'
-        const rows = []
+        const val = (v) => v || '—'
+        const sections = []
 
+        // Quick Scan
+        if (log.quickScan) {
+            const q = log.quickScan
+            const r = q.result || {}
+            sections.push(`
+                <div class="enrichment-log-section">
+                    <div class="enrichment-log-section-header">Quick Scan <span class="enrichment-log-dur">${dur(q.duration)}</span></div>
+                    <div class="enrichment-log-detail">Name: ${val(r.name)}, Producer: ${val(r.producer)}, Year: ${val(r.year)}</div>
+                    <div class="enrichment-log-detail">Region: ${val(r.region)}, Grape: ${val(r.grape)}, Type: ${val(r.type)}</div>
+                </div>
+            `)
+        }
+
+        // Deep Analysis
         if (log.deepAnalysis) {
             const d = log.deepAnalysis
-            let detail = `${dur(d.duration)}`
-            if (d.step1Confidence !== undefined) detail += ` · conf ${d.step1Confidence}`
-            if (d.groundingUsed) detail += ` → ${d.groundingMethod || 'search'}`
-            rows.push(['Deep Analysis', detail])
+            const r = d.result || {}
+            let confLine = `Confidence: ${d.step1Confidence !== undefined ? d.step1Confidence : '?'}`
+            if (d.groundingUsed) confLine += ` → grounding (${d.groundingMethod || 'search'})`
+            else if (d.step1Confidence >= 70) confLine += ' (geen grounding nodig)'
+
+            const details = [`<div class="enrichment-log-detail">${confLine}</div>`]
+            if (r.type || r.grape || r.region) {
+                details.push(`<div class="enrichment-log-detail">Type: ${val(r.type)}, Grape: ${val(r.grape)}, Region: ${val(r.region)}</div>`)
+            }
+            if (r.producer) details.push(`<div class="enrichment-log-detail">Producer: ${r.producer}</div>`)
+            if (r.expertRatings && r.expertRatings.length > 0) {
+                const ratings = r.expertRatings.map(e => `${e.source}: ${e.score}`).join(', ')
+                details.push(`<div class="enrichment-log-detail">Ratings: ${ratings}</div>`)
+            }
+            if (r.drinkFrom || r.drinkUntil) {
+                let window = `${r.drinkFrom || '?'}–${r.drinkUntil || '?'}`
+                if (r.peakFrom || r.peakUntil) window += ` (peak ${r.peakFrom || '?'}–${r.peakUntil || '?'})`
+                details.push(`<div class="enrichment-log-detail">Drinking window: ${window}</div>`)
+            }
+
+            sections.push(`
+                <div class="enrichment-log-section">
+                    <div class="enrichment-log-section-header">Deep Analysis <span class="enrichment-log-dur">${dur(d.duration)}</span></div>
+                    ${details.join('')}
+                </div>
+            `)
         }
+
+        // Price Lookup
         if (log.priceLookup) {
             const p = log.priceLookup
-            let detail = `${dur(p.duration)} · ${p.searchMethod || '?'}`
-            if (p.shoppingResults) detail += ' · shop'
-            if (p.webResults) detail += ' · web'
-            rows.push(['Price', detail])
+            const r = p.result || {}
+            const details = []
+            let method = p.searchMethod || '?'
+            if (p.shoppingResults) method += ' + shop'
+            if (p.webResults) method += ' + web'
+            details.push(`<div class="enrichment-log-detail">Search: ${method}</div>`)
+            if (r.price) {
+                details.push(`<div class="enrichment-log-detail">Price: €${r.price}${r.priceRange ? ` (${r.priceRange})` : ''} · ${r.source || '?'}</div>`)
+            } else {
+                details.push(`<div class="enrichment-log-detail enrichment-log-warn">No price found${r.confidence ? ` (${r.confidence})` : ''}</div>`)
+            }
+
+            sections.push(`
+                <div class="enrichment-log-section">
+                    <div class="enrichment-log-section-header">Price Lookup <span class="enrichment-log-dur">${dur(p.duration)}</span></div>
+                    ${details.join('')}
+                </div>
+            `)
         }
+
+        // Image Search
         if (log.imageSearch) {
             const i = log.imageSearch
-            let detail = `${dur(i.duration)}`
-            detail += i.found ? ` · ${i.candidatesFiltered}/${i.candidatesTotal} candidates` : ' · not found'
-            rows.push(['Image', detail])
+            const details = []
+            if (i.found) {
+                details.push(`<div class="enrichment-log-detail">${i.candidatesFiltered}/${i.candidatesTotal} candidates · ${i.imageSource || 'found'}</div>`)
+            } else {
+                details.push(`<div class="enrichment-log-detail enrichment-log-warn">Not found (${i.candidatesTotal || 0} results)</div>`)
+            }
+
+            sections.push(`
+                <div class="enrichment-log-section">
+                    <div class="enrichment-log-section-header">Image Search <span class="enrichment-log-dur">${dur(i.duration)}</span></div>
+                    ${details.join('')}
+                </div>
+            `)
         }
 
         const time = log.timestamp ? new Date(log.timestamp).toLocaleString('nl-NL') : ''
-        return `
-            <div class="enrichment-log-time">${time}</div>
-            ${rows.map(([label, value]) => `
-                <div class="enrichment-log-row">
-                    <span class="enrichment-log-label">${label}</span>
-                    <span class="enrichment-log-value">${value}</span>
-                </div>
-            `).join('')}
-        `
+        return `<div class="enrichment-log-time">${time}</div>${sections.join('')}`
     }
 
     updateDetailQuantity(change) {

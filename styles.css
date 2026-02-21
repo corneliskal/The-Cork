@@ -1848,34 +1848,51 @@ body {
 }
 
 .enrichment-log-content {
-    padding-top: 8px;
+    padding-top: 4px;
 }
 
 .enrichment-log-time {
     font-size: 11px;
     color: #b5a898;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
-.enrichment-log-row {
+.enrichment-log-section {
+    padding: 6px 0;
+    border-bottom: 1px solid #f5f0eb;
+}
+
+.enrichment-log-section:last-child {
+    border-bottom: none;
+}
+
+.enrichment-log-section-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5a4a3e;
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding: 3px 0;
-    font-size: 12px;
+    margin-bottom: 2px;
 }
 
-.enrichment-log-label {
-    color: #8a7a6e;
-    font-weight: 500;
-    flex-shrink: 0;
-}
-
-.enrichment-log-value {
-    color: #5a4a3e;
+.enrichment-log-dur {
     font-family: 'Space Grotesk', monospace;
     font-size: 11px;
-    text-align: right;
+    font-weight: 400;
+    color: #b5a898;
+}
+
+.enrichment-log-detail {
+    font-size: 11px;
+    color: #8a7a6e;
+    font-family: 'Space Grotesk', monospace;
+    line-height: 1.5;
+    padding-left: 0;
+}
+
+.enrichment-log-warn {
+    color: #c4956a;
 }
 
 /* Cellar Count */

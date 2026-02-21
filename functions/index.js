@@ -388,8 +388,8 @@ If you cannot find a reliable price, return:
 
                 hadShopping = !!shoppingResults;
                 hadWeb = !!webResults;
-                if (shoppingResults) console.log('🛒 Shopping results found');
-                if (webResults) console.log('🌐 Web results found');
+                if (shoppingResults) console.log('🛒 Shopping results:\n' + shoppingResults);
+                if (webResults) console.log('🌐 Web results:\n' + webResults);
 
                 const combinedResults = [
                     shoppingResults ? `SHOPPING RESULTS:\n${shoppingResults}` : null,
@@ -403,6 +403,18 @@ If you cannot find a reliable price, return:
                     const result = await model.generateContent(ragPrompt);
                     content = result.response.text();
                     console.log('Serper RAG price response:', content);
+
+                    // Check if Serper RAG found a price, if not try Gemini grounding
+                    try {
+                        const jsonCheck = content.match(/\{[\s\S]*\}/);
+                        if (jsonCheck) {
+                            const parsed = JSON.parse(jsonCheck[0]);
+                            if (!parsed.price) {
+                                console.log('🔎 Serper RAG returned no price, trying Gemini grounding...');
+                                content = null;
+                            }
+                        }
+                    } catch (e) { /* parse error, let main parser handle it */ }
                 }
             }
 
@@ -413,7 +425,7 @@ If you cannot find a reliable price, return:
                     model: 'gemini-2.5-flash',
                     tools: [{ googleSearch: {} }]
                 });
-                searchMethod = 'gemini-grounding';
+                searchMethod = searchMethod ? searchMethod + '+gemini-grounding' : 'gemini-grounding';
                 const prompt = `Search for the current retail price of this wine: "${searchTerms}"\n\nLook for prices on wine retailers, Vivino, Wine-Searcher, or other wine shops.\nFocus on European/Dutch prices in EUR (€).\n\n${pricePrompt}`;
                 const result = await model.generateContent(prompt);
                 content = result.response.text();
