@@ -1353,6 +1353,7 @@ class WineCellar {
                 if (deepData.expert_ratings && deepData.expert_ratings.length > 0) {
                     updates.expertRatings = deepData.expert_ratings;
                 }
+                if (deepData.type) updates.type = deepData.type;
                 if (deepData.grape && !wineData.grape) updates.grape = deepData.grape;
                 if (deepData.region && !wineData.region) updates.region = deepData.region;
                 // If quick scan missed producer and deep analysis found both name + producer,
