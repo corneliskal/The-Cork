@@ -722,6 +722,33 @@ class WineCellar {
     // Firebase Storage (Images)
     // ============================
 
+    animateImageTransition(wineId, newImageUrl) {
+        const container = document.querySelector(`.swipe-container[data-id="${wineId}"] .wine-card-image`)
+        if (!container) return
+
+        const oldImg = container.querySelector('img')
+        if (!oldImg) return
+
+        const newImg = document.createElement('img')
+        newImg.className = 'image-transition-overlay'
+        newImg.alt = oldImg.alt
+
+        newImg.onload = () => {
+            container.appendChild(newImg)
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    newImg.classList.add('visible')
+                })
+            })
+            setTimeout(() => {
+                if (oldImg.parentNode) oldImg.remove()
+                newImg.classList.remove('image-transition-overlay', 'visible')
+            }, 800)
+        }
+
+        newImg.src = newImageUrl
+    }
+
     async uploadImageToStorage(imageId, base64Data, folder = 'wines') {
         if (!this.storage || !this.userId) return null;
 
@@ -1421,16 +1448,29 @@ class WineCellar {
 
             if (imageBase64) {
                 console.log('🖼️ Productfoto gevonden (achtergrond)');
-                // Upload to Storage, fall back to base64 if upload fails
                 const url = await this.uploadImageToStorage(enrichId, imageBase64);
-                this.updateSavedWine(enrichId, { image: url || imageBase64 });
+                const newImageUrl = url || imageBase64
+
+                // Targeted update + crossfade animatie i.p.v. full re-render
+                const wine = this.wines.find(w => w.enrichId === enrichId)
+                if (wine) {
+                    const hadCameraPhoto = wine.image && wine.image !== newImageUrl
+                    wine.image = newImageUrl
+                    this.saveWines()
+                    if (hadCameraPhoto) {
+                        this.animateImageTransition(wine.id, newImageUrl)
+                    }
+                }
             } else {
                 // No product image found — upload camera photo to Storage
                 const wine = this.wines.find(w => w.enrichId === enrichId)
                     || this.wishlist.find(w => w.enrichId === enrichId);
                 if (wine && this.isBase64Image(wine.image)) {
                     const url = await this.uploadImageToStorage(enrichId, wine.image);
-                    if (url) this.updateSavedWine(enrichId, { image: url });
+                    if (url) {
+                        wine.image = url
+                        this.saveWines()
+                    }
                 }
             }
             this.checkEnrichmentDone(enrichId);
