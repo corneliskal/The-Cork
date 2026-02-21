@@ -273,7 +273,8 @@ class WineCellar {
     }
 
     get isAdmin() {
-        return this.userId === '9lcsHu9NN3clMBqzCqkQ3PrNdqQ2'
+        const adminUids = ['9lcsHu9NN3clMBqzCqkQ3PrNdqQ2', 'FMDaB2kzg4fSyWiBwLxrFFl2Zjv2']
+        return adminUids.includes(this.userId)
     }
 
     // Get Firebase ID token for API calls
