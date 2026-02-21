@@ -10,11 +10,11 @@ const getGeminiKey = () => process.env.GEMINI_KEY;
 const getSerperKey = () => process.env.SERPER_KEY;
 
 // Serper.dev web search — used as cheap RAG alternative to Gemini grounding
-async function serperWebSearch(query, serperKey, num = 5) {
+async function serperWebSearch(query, serperKey, num = 5, options = {}) {
     const response = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': serperKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: query, num })
+        body: JSON.stringify({ q: query, num, ...options })
     });
     if (!response.ok) return null;
     const data = await response.json();
@@ -22,11 +22,11 @@ async function serperWebSearch(query, serperKey, num = 5) {
 }
 
 // Serper.dev shopping search — returns structured price data
-async function serperShoppingSearch(query, serperKey, num = 5) {
+async function serperShoppingSearch(query, serperKey, num = 5, options = {}) {
     const response = await fetch('https://google.serper.dev/shopping', {
         method: 'POST',
         headers: { 'X-API-KEY': serperKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: query, num })
+        body: JSON.stringify({ q: query, num, ...options })
     });
     if (!response.ok) return null;
     const data = await response.json();
@@ -349,7 +349,7 @@ exports.lookupWinePrice = functions.https.onRequest((req, res) => {
             const serperKey = getSerperKey();
 
             const pricePrompt = `Extract the current retail price of this wine from the search results below.
-Focus on European/Dutch prices in EUR (€). If only USD prices available, convert at ~0.92.
+Prefer prices in EUR (€) from European retailers. If no EUR price is available, convert non-EUR prices (USD ×0.92, GBP ×1.18, AUD ×0.58).
 
 Return ONLY a JSON object with this format, no other text:
 {
@@ -370,10 +370,11 @@ If you cannot find a reliable price, return:
                 const webQuery = `${searchTerms} wine price EUR buy`;
                 console.log('🔎 Serper price search:', shoppingQuery);
 
-                // Run shopping and web search in parallel
+                // Run shopping and web search in parallel (gl:'nl' → European/EUR results)
+                const euOptions = { gl: 'nl' };
                 const [shoppingResults, webResults] = await Promise.all([
-                    serperShoppingSearch(shoppingQuery, serperKey, 5).catch(() => null),
-                    serperWebSearch(webQuery, serperKey, 5).catch(() => null)
+                    serperShoppingSearch(shoppingQuery, serperKey, 5, euOptions).catch(() => null),
+                    serperWebSearch(webQuery, serperKey, 5, euOptions).catch(() => null)
                 ]);
 
                 if (shoppingResults) console.log('🛒 Shopping results found');
