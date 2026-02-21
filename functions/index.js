@@ -21,6 +21,18 @@ async function serperWebSearch(query, serperKey, num = 5) {
     return formatSearchResults(data);
 }
 
+// Serper.dev shopping search — returns structured price data
+async function serperShoppingSearch(query, serperKey, num = 5) {
+    const response = await fetch('https://google.serper.dev/shopping', {
+        method: 'POST',
+        headers: { 'X-API-KEY': serperKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: query, num })
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return formatShoppingResults(data);
+}
+
 function formatSearchResults(data) {
     const parts = [];
     if (data.knowledgeGraph) {
@@ -39,6 +51,14 @@ function formatSearchResults(data) {
         });
     }
     return parts.join('\n\n') || null;
+}
+
+function formatShoppingResults(data) {
+    if (!data.shopping || data.shopping.length === 0) return null;
+    const parts = data.shopping.map((item, i) =>
+        `[${i + 1}] ${item.title}\nPrice: ${item.price || 'N/A'}\nSource: ${item.source || 'unknown'}\nURL: ${item.link || ''}`
+    );
+    return parts.join('\n\n');
 }
 
 // Middleware to verify Firebase Auth
@@ -329,7 +349,7 @@ exports.lookupWinePrice = functions.https.onRequest((req, res) => {
             const serperKey = getSerperKey();
 
             const pricePrompt = `Extract the current retail price of this wine from the search results below.
-Focus on European/Dutch prices in EUR (€).
+Focus on European/Dutch prices in EUR (€). If only USD prices available, convert at ~0.92.
 
 Return ONLY a JSON object with this format, no other text:
 {
@@ -344,15 +364,29 @@ If you cannot find a reliable price, return:
 
             let content;
 
-            // Try Serper RAG first (cheap), fallback to Gemini grounding
+            // Try Serper shopping + web search (cheap), fallback to Gemini grounding
             if (serperKey) {
-                const priceQuery = `${searchTerms} wine price EUR buy`;
-                console.log('🔎 Serper price search:', priceQuery);
-                const searchResults = await serperWebSearch(priceQuery, serperKey, 5);
+                const shoppingQuery = `${searchTerms} wine`;
+                const webQuery = `${searchTerms} wine price EUR buy`;
+                console.log('🔎 Serper price search:', shoppingQuery);
 
-                if (searchResults) {
+                // Run shopping and web search in parallel
+                const [shoppingResults, webResults] = await Promise.all([
+                    serperShoppingSearch(shoppingQuery, serperKey, 5).catch(() => null),
+                    serperWebSearch(webQuery, serperKey, 5).catch(() => null)
+                ]);
+
+                if (shoppingResults) console.log('🛒 Shopping results found');
+                if (webResults) console.log('🌐 Web results found');
+
+                const combinedResults = [
+                    shoppingResults ? `SHOPPING RESULTS:\n${shoppingResults}` : null,
+                    webResults ? `WEB SEARCH RESULTS:\n${webResults}` : null
+                ].filter(Boolean).join('\n\n');
+
+                if (combinedResults) {
                     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-                    const ragPrompt = `Wine: "${searchTerms}"\n\nWEB SEARCH RESULTS:\n${searchResults}\n\n${pricePrompt}`;
+                    const ragPrompt = `Wine: "${searchTerms}"\n\n${combinedResults}\n\n${pricePrompt}`;
                     const result = await model.generateContent(ragPrompt);
                     content = result.response.text();
                     console.log('Serper RAG price response:', content);
@@ -461,24 +495,28 @@ exports.searchWineImage = functions.https.onRequest(async (req, res) => {
         ) || [];
 
         // Try to fetch image server-side to avoid CORS issues
+        console.log('🖼️ Candidates:', candidates.length, 'of', data.images?.length || 0);
         let imageBase64 = null;
         let usedImage = null;
         for (const img of candidates.slice(0, 5)) {
             try {
+                console.log('🖼️ Trying:', img.imageUrl);
                 const imgResponse = await fetch(img.imageUrl, { redirect: 'follow' });
-                if (!imgResponse.ok) continue;
+                if (!imgResponse.ok) { console.log('🖼️ HTTP', imgResponse.status); continue; }
                 const contentType = imgResponse.headers.get('content-type') || 'image/jpeg';
-                if (!contentType.startsWith('image/')) continue;
+                if (!contentType.startsWith('image/')) { console.log('🖼️ Not image:', contentType); continue; }
                 const buffer = await imgResponse.arrayBuffer();
-                if (buffer.byteLength > 2 * 1024 * 1024) continue; // skip > 2MB
+                if (buffer.byteLength > 2 * 1024 * 1024) { console.log('🖼️ Too large:', buffer.byteLength); continue; }
+                console.log('🖼️ Success:', contentType, buffer.byteLength, 'bytes');
                 imageBase64 = `data:${contentType};base64,${Buffer.from(buffer).toString('base64')}`;
                 usedImage = img;
                 break;
             } catch (e) {
-                console.log('Failed to fetch image:', img.imageUrl, e.message);
+                console.log('🖼️ Failed:', img.imageUrl, e.message);
             }
         }
 
+        console.log('🖼️ Result:', usedImage ? usedImage.imageUrl : 'NO IMAGE FOUND');
         res.json({
             success: true,
             data: {
@@ -542,12 +580,14 @@ RULES:
 2. Logic: If experts vary, use latest 'From' and earliest 'Until'.
 3. NV Wine: Use most recent disgorgement/base year.
 4. Calculations:
-   - bestFrom/Until = Expert stated range.
+   - bestFrom/Until = Expert stated range (as calendar years, e.g. 2025-2035).
    - peakFrom/Until = Middle 33% of best range.
    - canDrinkFrom/Until = best range +/- 3 years.
+   - All drinking_window values MUST be realistic calendar years (e.g. 2024, 2030), never 0.
 5. Missing Data: Omit 'expert_ratings' if no professional reviews found; estimate traits from terroir/varietal.
 6. Name: Use the cuvée/vineyard/wine name, NOT the producer. E.g. Domaine Achillée Rittersberg Riesling → name: "Rittersberg", producer: "Domaine Achillée".
 7. Producer: Château, domaine, winery or estate name. Never use legal entity names (Société Civile, S.A., M.L.P., SRL, GmbH etc.).
+8. Grape: Only set if you are certain from the wine's known identity. Do NOT guess from region alone.
 
 OUTPUT: Minified JSON only. No prose.
 Schema: {"name":"","producer":"","year":0,"region":"","grape":"","type":"red/white/rosé/sparkling/dessert","expert_ratings":[{"source":"","score":"","window":""}],"characteristics":{"boldness":1,"tannins":1,"acidity":1,"alcohol_pct":""},"notes":"","drinking_window":{"canDrinkFrom":0,"bestFrom":0,"peakFrom":0,"peakUntil":0,"bestUntil":0,"canDrinkUntil":0},"confidence":0}`;
@@ -588,8 +628,14 @@ Schema: {"name":"","producer":"","year":0,"region":"","grape":"","type":"red/whi
 
             if (searchResults) {
                 // RAG: feed search results as context to Gemini (no grounding needed)
-                const ragPrompt = basePrompt.replace('confidence":0}', '"}') + `\n\nWEB SEARCH RESULTS:\n${searchResults}`;
-                const result2 = await modelLight.generateContent(ragPrompt);
+                // Remove confidence from schema for Step 2
+                const step2Prompt = basePrompt.replace(',"confidence":0}', '}') + `
+
+IMPORTANT: drinking_window years must be realistic calendar years (e.g. 2024-2035), NOT zero or relative offsets. If you cannot determine exact years, estimate based on wine type, region, and vintage.
+
+WEB SEARCH RESULTS:
+${searchResults}`;
+                const result2 = await modelLight.generateContent(step2Prompt);
                 const content2 = result2.response.text();
                 console.log('Step 2 Serper RAG response:', content2);
 
