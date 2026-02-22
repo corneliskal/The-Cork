@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="The Cork">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="styles.css?v=76">
+    <link rel="stylesheet" href="styles.css?v=77">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -743,12 +743,16 @@
 
                 <!-- Content -->
                 <div class="detail-content">
-                    <!-- Rating & Rebuy -->
+                    <!-- Rating, Rebuy & Store -->
                     <div class="archive-rating-display">
                         <div class="rating-stars" id="archiveDetailStars">★★★★★</div>
                         <div class="rebuy-badge" id="archiveDetailRebuy">
-                            <span class="rebuy-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg></span>
+                            <span class="rebuy-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg></span>
                             <span>Rebuy</span>
+                        </div>
+                        <div id="archiveDetailStoreSection" class="archive-store-badge" style="display:none">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                            <span id="archiveDetailStore">Winkel</span>
                         </div>
                     </div>
 
@@ -765,11 +769,6 @@
                             <div class="detail-fact-label">Price</div>
                             <div id="archiveDetailPrice" class="detail-fact-value">€25</div>
                         </div>
-                    </div>
-
-                    <div id="archiveDetailStoreSection" class="detail-store">
-                        <span class="store-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span>
-                        <span id="archiveDetailStore">Winkel</span>
                     </div>
 
                     <div class="detail-profile-section">
@@ -920,7 +919,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
-    <script src="config.js?v=76"></script>
-    <script src="app.js?v=76"></script>
+    <script src="config.js?v=77"></script>
+    <script src="app.js?v=77"></script>
 </body>
 </html>
