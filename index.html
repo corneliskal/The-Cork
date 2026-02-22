@@ -111,7 +111,7 @@
         <main class="main-content hidden">
             <!-- Sticky Filter Bar -->
             <div id="filterBar" class="filter-bar hidden">
-                <!-- Search with inline filter/sort icons -->
+                <!-- Search -->
                 <div class="search-input-wrapper">
                     <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/>
@@ -124,50 +124,102 @@
                             <line x1="6" y1="6" x2="18" y2="18"/>
                         </svg>
                     </button>
-                    <button id="filterBtn" class="search-action-btn" title="Filter">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </div>
+
+                <!-- Filter Row: 3 dropdowns + advanced button -->
+                <div id="filterRow" class="filter-row">
+                    <!-- Type Dropdown -->
+                    <div class="filter-dropdown" id="typeDropdown">
+                        <button class="filter-dropdown-btn" data-dropdown="type">
+                            <span class="filter-dropdown-label">
+                                <svg class="filter-dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                    <path d="M12 3c-3 4.5-7 8-7 12a7 7 0 0014 0c0-4-4-7.5-7-12z"/>
+                                </svg>
+                                <span class="filter-dropdown-text">Type</span>
+                            </span>
+                            <span class="filter-dropdown-actions">
+                                <span class="filter-dropdown-clear hidden" data-clear="type">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="10" height="10"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </span>
+                                <svg class="filter-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+                            </span>
+                        </button>
+                        <div class="filter-dropdown-menu hidden" data-menu="type">
+                            <button class="filter-dropdown-option" data-filter="type" data-value="red"><span class="filter-opt-label"><span class="filter-type-dot dot-red"></span>Red</span></button>
+                            <button class="filter-dropdown-option" data-filter="type" data-value="white"><span class="filter-opt-label"><span class="filter-type-dot dot-white"></span>White</span></button>
+                            <button class="filter-dropdown-option" data-filter="type" data-value="rosé"><span class="filter-opt-label"><span class="filter-type-dot dot-rosé"></span>Rosé</span></button>
+                            <button class="filter-dropdown-option" data-filter="type" data-value="sparkling"><span class="filter-opt-label"><span class="filter-type-dot dot-sparkling"></span>Sparkling</span></button>
+                            <button class="filter-dropdown-option" data-filter="type" data-value="dessert"><span class="filter-opt-label"><span class="filter-type-dot dot-dessert"></span>Dessert</span></button>
+                            <button class="filter-dropdown-option" data-filter="type" data-value="orange"><span class="filter-opt-label"><span class="filter-type-dot dot-orange"></span>Orange</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Grape Dropdown (dynamisch gevuld vanuit JS) -->
+                    <div class="filter-dropdown" id="grapeDropdown">
+                        <button class="filter-dropdown-btn" data-dropdown="grape">
+                            <span class="filter-dropdown-label">
+                                <svg class="filter-dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                    <circle cx="9" cy="10" r="2.5"/><circle cx="15" cy="10" r="2.5"/><circle cx="12" cy="15" r="2.5"/>
+                                    <path d="M12 4v3M10 4.5c-1-1-2.5-.5-2.5-.5M14 4.5c1-1 2.5-.5 2.5-.5"/>
+                                </svg>
+                                <span class="filter-dropdown-text">Grape</span>
+                            </span>
+                            <span class="filter-dropdown-actions">
+                                <span class="filter-dropdown-clear hidden" data-clear="grape">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="10" height="10"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </span>
+                                <svg class="filter-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+                            </span>
+                        </button>
+                        <div class="filter-dropdown-menu hidden" data-menu="grape"></div>
+                    </div>
+
+                    <!-- Window Dropdown -->
+                    <div class="filter-dropdown" id="windowDropdown">
+                        <button class="filter-dropdown-btn" data-dropdown="window">
+                            <span class="filter-dropdown-label">
+                                <svg class="filter-dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                    <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
+                                </svg>
+                                <span class="filter-dropdown-text">Window</span>
+                            </span>
+                            <span class="filter-dropdown-actions">
+                                <span class="filter-dropdown-clear hidden" data-clear="window">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="10" height="10"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </span>
+                                <svg class="filter-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+                            </span>
+                        </button>
+                        <div class="filter-dropdown-menu hidden" data-menu="window">
+                            <button class="filter-dropdown-option" data-filter="window" data-value="peak"><span class="filter-opt-label"><span class="filter-window-dot" style="background:#4A7A3F"></span>At Peak</span></button>
+                            <button class="filter-dropdown-option" data-filter="window" data-value="ready"><span class="filter-opt-label"><span class="filter-window-dot" style="background:#8B7444"></span>Ready</span></button>
+                            <button class="filter-dropdown-option" data-filter="window" data-value="opening"><span class="filter-opt-label"><span class="filter-window-dot" style="background:#B8863A"></span>Opening Up</span></button>
+                            <button class="filter-dropdown-option" data-filter="window" data-value="drink-soon"><span class="filter-opt-label"><span class="filter-window-dot" style="background:#9B4049"></span>Drink Soon</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Filter Button -->
+                    <button id="advancedFilterBtn" class="advanced-filter-btn" title="Advanced filters">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                            <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+                            <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+                            <circle cx="4" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="10" r="2" fill="currentColor"/><circle cx="20" cy="14" r="2" fill="currentColor"/>
                         </svg>
-                    </button>
-                    <button id="sortBtn" class="search-action-btn" title="Sort">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="3" y1="6" x2="21" y2="6"/>
-                            <line x1="6" y1="12" x2="18" y2="12"/>
-                            <line x1="9" y1="18" x2="15" y2="18"/>
-                        </svg>
+                        <span class="advanced-filter-badge hidden" id="advancedBadge">0</span>
                     </button>
                 </div>
 
-                <!-- Sort Dropdown -->
-                <div id="sortDropdown" class="control-dropdown hidden">
-                    <button class="control-option active" data-sort="recent">Recently added</button>
-                    <button class="control-option" data-sort="name_asc">Name (A → Z)</button>
-                    <button class="control-option" data-sort="grape_asc">Grape (A → Z)</button>
-                    <button class="control-option" data-sort="drinkability">Drinkability</button>
-                    <button class="control-option" data-sort="price_asc">Price (low → high)</button>
-                    <button class="control-option" data-sort="price_desc">Price (high → low)</button>
-                </div>
-
-                <!-- Filter Dropdown -->
-                <div id="filterDropdown" class="control-dropdown hidden">
-                    <div class="filter-section">
-                        <h4>Type</h4>
-                        <button class="control-option active" data-filter="type" data-value="all">All</button>
-                        <button class="control-option" data-filter="type" data-value="red">Red</button>
-                        <button class="control-option" data-filter="type" data-value="white">White</button>
-                        <button class="control-option" data-filter="type" data-value="rosé">Rosé</button>
-                        <button class="control-option" data-filter="type" data-value="sparkling">Sparkling</button>
-                        <button class="control-option" data-filter="type" data-value="dessert">Dessert</button>
+                <!-- Active Filter Bar -->
+                <div id="activeFilterBar" class="active-filter-bar hidden">
+                    <div class="active-filter-left">
+                        <span class="active-filter-count" id="activeFilterCount">0</span>
+                        <div id="activeFilterTags" class="active-filter-tags"></div>
                     </div>
-                    <div class="filter-section">
-                        <h4>Drink status</h4>
-                        <button class="control-option" data-filter="drinkability" data-value="all">All</button>
-                        <button class="control-option" data-filter="drinkability" data-value="peak">At Peak</button>
-                        <button class="control-option" data-filter="drinkability" data-value="ready">Ready</button>
-                        <button class="control-option" data-filter="drinkability" data-value="drink-soon">Drink Soon</button>
-                        <button class="control-option" data-filter="drinkability" data-value="opening">Opening Up</button>
-                    </div>
-                    <div class="filter-section hidden" id="grapeFilterSection"></div>
+                    <button id="clearAllFilters" class="active-filter-clear">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="10" height="10"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        Clear
+                    </button>
                 </div>
 
                 <!-- Search Results -->
@@ -907,6 +959,28 @@
             </div>
         </div>
 
+        <!-- Advanced Filter Modal -->
+        <div id="advancedFilterModal" class="modal">
+            <div class="modal-content advanced-filter-panel">
+                <div class="modal-header">
+                    <div>
+                        <h2>Advanced Filters</h2>
+                        <p class="adv-filter-subtitle">Verfijn je selectie</p>
+                    </div>
+                    <button class="close-btn" id="advancedFilterClose">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body" id="advancedFilterBody">
+                    <!-- Dynamically populated by JS: Region, Country, Producer, Vintage, Price Range, Sort -->
+                </div>
+                <div class="adv-filter-footer">
+                    <button class="adv-filter-reset" id="advancedFilterReset">Reset</button>
+                    <button class="adv-filter-apply" id="advancedFilterApply">Apply</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Toast Notification -->
         <div id="toast" class="toast">
             <span id="toastMessage"></span>
@@ -920,7 +994,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
-    <script src="config.js?v=82"></script>
-    <script src="app.js?v=82"></script>
+    <script src="config.js?v=83"></script>
+    <script src="app.js?v=83"></script>
 </body>
 </html>
