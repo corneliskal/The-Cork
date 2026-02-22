@@ -1279,17 +1279,42 @@ class WineCellar {
                 console.log('🔄 Naam overgenomen van bestaande wijn:', existingWine.name, existingWine.producer);
             }
 
-            // Auto-save: sla wijn direct op en sluit modal
             indicator.classList.add('hidden');
 
+            // LOCAL CHECK: zelfde wijn + zelfde jaar → quantity +1
+            if (existingWine && this.addDestination !== 'wishlist') {
+                const scanYear = String(wineData.year || 'nv')
+                const existingYear = String(existingWine.year || 'nv')
+                if (scanYear === existingYear) {
+                    existingWine.quantity = (existingWine.quantity || 1) + 1
+                    this.saveWines()
+                    this.renderWineList()
+                    this.updateStats()
+                    this.closeModal('addModal')
+                    this.showToast(`${existingWine.name} — now ${existingWine.quantity} bottles`)
+                    return
+                }
+            }
+
+            // CATALOG CHECK: zoek in gedeelde catalogus
+            const catalogKey = this.generateCatalogKey(wineData.name, wineData.producer, wineData.year)
+            let catalogData = null
+            if (catalogKey) {
+                catalogData = await this.lookupCatalog(catalogKey)
+            }
+
             const enrichId = Date.now().toString();
-            const chars = wineData.characteristics || {};
+            const chars = catalogData || wineData.characteristics || {};
             const estWindow = wineData.year ? this.estimateDrinkWindow(wineData) : {};
-            // Build drinkingWindow from new format, old format, or local estimate
+            // Build drinkingWindow from catalog, new format, old format, or local estimate
             let drinkingWindow = null;
             let drinkFrom = null;
             let drinkUntil = null;
-            if (wineData.drinking_window) {
+            if (catalogData?.drinkingWindow) {
+                drinkingWindow = catalogData.drinkingWindow;
+                drinkFrom = catalogData.drinkFrom || drinkingWindow.bestFrom;
+                drinkUntil = catalogData.drinkUntil || drinkingWindow.bestUntil;
+            } else if (wineData.drinking_window) {
                 drinkingWindow = wineData.drinking_window;
                 drinkFrom = drinkingWindow.bestFrom;
                 drinkUntil = drinkingWindow.bestUntil;
@@ -1305,23 +1330,26 @@ class WineCellar {
             const savedWine = {
                 id: enrichId,
                 enrichId: enrichId,
+                catalogKey: catalogKey,
                 name: wineData.name || 'Unknown wine',
                 producer: wineData.producer || null,
-                type: wineData.type || 'red',
+                type: catalogData?.type || wineData.type || 'red',
                 year: wineData.year || null,
-                region: wineData.region || null,
-                grape: wineData.grape || null,
+                region: catalogData?.region || wineData.region || null,
+                grape: catalogData?.grape || wineData.grape || null,
                 boldness: chars.boldness || 3,
                 tannins: chars.tannins || 3,
                 acidity: chars.acidity || 3,
-                price: null,
+                alcohol: catalogData?.alcohol || null,
+                price: catalogData?.price || null,
                 quantity: 1,
                 store: null,
                 drinkFrom: drinkFrom,
                 drinkUntil: drinkUntil,
                 drinkingWindow: drinkingWindow,
-                notes: wineData.notes || null,
-                image: this.currentImage,
+                notes: catalogData?.notes || wineData.notes || null,
+                expertRatings: catalogData?.expertRatings || null,
+                image: (catalogData?.image && !catalogData.image.startsWith('data:')) ? catalogData.image : this.currentImage,
                 addedAt: new Date().toISOString()
             };
 
@@ -1336,12 +1364,13 @@ class WineCellar {
                 this.renderWineList();
                 this.updateStats();
                 this.closeModal('addModal');
-                this.showToast('Wine recognized and saved!');
+                this.showToast(catalogData ? 'Wine added from catalog!' : 'Wine recognized and saved!');
             }
 
-            // Start prijs + foto ophalen op de achtergrond
-            // (image upload happens inside enrichment after Serper search)
-            this.enrichWineInBackground(enrichId, wineData, quickScanLog);
+            // Enrichment alleen als NIET in catalogus gevonden
+            if (!catalogData) {
+                this.enrichWineInBackground(enrichId, wineData, quickScanLog);
+            }
 
         } catch (error) {
             console.error('Vision API error:', error);
@@ -1494,6 +1523,10 @@ class WineCellar {
                     if (hadCameraPhoto) {
                         this.animateImageTransition(wine.id, newImageUrl)
                     }
+                    // Upload product image to shared catalog path
+                    if (wine.catalogKey) {
+                        this.uploadCatalogImage(wine.catalogKey, imageBase64)
+                    }
                 }
             } else {
                 // No product image found — upload camera photo to Storage
@@ -1542,6 +1575,13 @@ class WineCellar {
             }
             this.backgroundProcessing.delete(enrichId);
             this.renderWineList(); // Verwijder spinner
+
+            // Write enriched data to shared catalog
+            const wine = this.wines.find(w => w.enrichId === enrichId)
+                || this.wishlist.find(w => w.enrichId === enrichId)
+            if (wine?.catalogKey) {
+                this.writeToCatalog(wine.catalogKey, wine)
+            }
         }
     }
 
@@ -1697,6 +1737,66 @@ class WineCellar {
 
             return true;
         });
+    }
+
+    // --- Shared catalog methods ---
+
+    generateCatalogKey(name, producer, year) {
+        if (!name) return null
+        const norm = (s) => (s || '').toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/ch[aâ]teau|chateau|domaine|tenuta|bodega|weingut|maison|cave/gi, '')
+            .replace(/[^a-z0-9]/g, '')
+        return `${norm(name)}_${norm(producer)}_${year || 'nv'}`.substring(0, 200)
+    }
+
+    async lookupCatalog(catalogKey) {
+        if (!this.db || !catalogKey) return null
+        try {
+            const snapshot = await this.db.ref(`catalog/${catalogKey}`).once('value')
+            return snapshot.val()
+        } catch (e) {
+            console.log('Catalog lookup failed:', e.message)
+            return null
+        }
+    }
+
+    async writeToCatalog(catalogKey, wine) {
+        if (!this.db || !catalogKey) return
+        try {
+            const entry = {
+                name: wine.name, producer: wine.producer, type: wine.type,
+                year: wine.year, region: wine.region, grape: wine.grape,
+                boldness: wine.boldness, tannins: wine.tannins, acidity: wine.acidity,
+                alcohol: wine.alcohol, notes: wine.notes,
+                expertRatings: wine.expertRatings,
+                drinkFrom: wine.drinkFrom, drinkUntil: wine.drinkUntil,
+                drinkingWindow: wine.drinkingWindow,
+                price: wine.price, image: wine.image,
+                updatedAt: new Date().toISOString()
+            }
+            Object.keys(entry).forEach(k => { if (entry[k] == null) delete entry[k] })
+            await this.db.ref(`catalog/${catalogKey}`).update(entry)
+            console.log('Catalog updated:', catalogKey)
+        } catch (e) {
+            console.log('Catalog write failed:', e.message)
+        }
+    }
+
+    async uploadCatalogImage(catalogKey, base64Data) {
+        if (!this.storage || !catalogKey) return null
+        try {
+            const response = await fetch(base64Data)
+            const blob = await response.blob()
+            const ref = this.storage.ref(`catalog-images/${catalogKey}.jpg`)
+            await ref.put(blob, { contentType: 'image/jpeg' })
+            const url = await ref.getDownloadURL()
+            await this.db.ref(`catalog/${catalogKey}/image`).set(url)
+            return url
+        } catch (e) {
+            console.log('Catalog image upload failed:', e.message)
+            return null
+        }
     }
 
     promptForYear(wineId) {
@@ -1984,6 +2084,9 @@ class WineCellar {
         if (wineData.drinkFrom && wineData.drinkUntil) {
             wineData.drinkingWindow = this.mapLegacyDrinkWindow(wineData.drinkFrom, wineData.drinkUntil);
         }
+
+        // Generate catalog key for enrichment write-back
+        wineData.catalogKey = this.generateCatalogKey(wineData.name, wineData.producer, wineData.year);
 
         if (this.editMode) {
             const index = this.wines.findIndex(w => w.id === this.currentWineId);
@@ -2286,9 +2389,33 @@ class WineCellar {
                                 wine.drinkingWindow = this.mapLegacyDrinkWindow(estWindow.from, estWindow.until);
                                 const enrichId = 'enrich_' + Date.now();
                                 wine.enrichId = enrichId;
-                                await this.saveWines();
-                                this.renderWineList();
-                                this.enrichWineInBackground(enrichId, wine);
+                                wine.catalogKey = this.generateCatalogKey(wine.name, wine.producer, wine.year);
+
+                                // Check catalog before enriching
+                                const catalogData = wine.catalogKey ? await this.lookupCatalog(wine.catalogKey) : null;
+                                if (catalogData) {
+                                    if (catalogData.boldness) wine.boldness = catalogData.boldness;
+                                    if (catalogData.tannins) wine.tannins = catalogData.tannins;
+                                    if (catalogData.acidity) wine.acidity = catalogData.acidity;
+                                    if (catalogData.alcohol) wine.alcohol = catalogData.alcohol;
+                                    if (catalogData.notes) wine.notes = catalogData.notes;
+                                    if (catalogData.expertRatings) wine.expertRatings = catalogData.expertRatings;
+                                    if (catalogData.price) wine.price = catalogData.price;
+                                    if (catalogData.drinkingWindow) {
+                                        wine.drinkingWindow = catalogData.drinkingWindow;
+                                        wine.drinkFrom = catalogData.drinkFrom || catalogData.drinkingWindow.bestFrom;
+                                        wine.drinkUntil = catalogData.drinkUntil || catalogData.drinkingWindow.bestUntil;
+                                    }
+                                    if (catalogData.image && !catalogData.image.startsWith('data:')) {
+                                        wine.image = catalogData.image;
+                                    }
+                                    await this.saveWines();
+                                    this.renderWineList();
+                                } else {
+                                    await this.saveWines();
+                                    this.renderWineList();
+                                    this.enrichWineInBackground(enrichId, wine);
+                                }
                             }
                         }
 

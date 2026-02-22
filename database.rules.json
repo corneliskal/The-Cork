@@ -5,6 +5,12 @@
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid"
       }
+    },
+    "catalog": {
+      "$wineKey": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
     }
   }
 }
