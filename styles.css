@@ -2195,40 +2195,139 @@ body {
     text-align: center;
 }
 
-/* Star Rating - 5 Stars */
-.star-rating {
+/* Rating Slider — drinking window stijl */
+.detail-rating-card {
+    padding: 16px 0;
+    border-bottom: 1px solid #f0ece7;
+}
+.rating-card-label {
+    font-family: 'Outfit', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #b5a898;
+    margin-bottom: 12px;
+}
+.rating-header {
     display: flex;
-    justify-content: center;
-    gap: var(--space-8);
-    margin-bottom: var(--space-8);
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
 }
-
-.star-rating .star {
-    font-size: 2.5rem;
-    color: var(--separator-opaque);
-    cursor: pointer;
-    transition: color 0.15s, transform 0.15s;
-    line-height: 1;
+.rating-badge {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    color: #8A8278;
+    background: rgba(138,130,120, 0.08);
 }
+.rating-badge.good      { color: #8B7444; background: rgba(201,169,110, 0.12); }
+.rating-badge.very-good { color: #722F37; background: rgba(114,47,55, 0.08); }
+.rating-badge.excellent { color: #722F37; background: rgba(114,47,55, 0.12); }
 
-.star-rating .star:active {
-    transform: scale(1.2);
+.rating-value {
+    font-family: ui-monospace, monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: #c9a96e;
 }
-
-.star-rating .star.active {
+.rating-value .star-icon {
     color: #FFD700;
 }
 
-.star-rating .star.hover {
-    color: #FFD700;
-    opacity: 0.7;
+.rating-track-wrapper {
+    position: relative;
+    padding-bottom: 20px;
+}
+.rating-track {
+    position: relative;
+    height: 38px;
+    margin: 0 6px;
+}
+.rating-track::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 1.5px;
+    background: rgba(201,169,110, 0.15);
+    transform: translateY(-50%);
+}
+.rating-fill {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 3px;
+    border-radius: 1.5px;
+    background: linear-gradient(90deg, rgba(201,169,110, 0.3), rgba(201,169,110, 0.5));
+    transform: translateY(-50%);
+    width: 0%;
+    transition: width 0.05s;
+}
+.rating-thumb {
+    position: absolute;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #722F37;
+    border: 2px solid #9B4049;
+    box-shadow: 0 0 10px rgba(114,47,55, 0.2);
+    transform: translate(-50%, -50%);
+    left: 0%;
+    transition: left 0.05s;
+    pointer-events: none;
+    z-index: 1;
 }
 
-.rating-label {
+.rating-markers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    pointer-events: none;
+}
+.rating-marker {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+.rating-marker::before {
+    content: '';
     display: block;
-    text-align: center;
-    font-size: var(--font-footnote);
-    color: var(--label-tertiary);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(138,130,120, 0.3);
+}
+.rating-marker span {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: ui-monospace, monospace;
+    font-size: 9px;
+    color: rgba(92,86,78, 0.4);
+}
+
+.rating-range-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 38px;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+    -webkit-appearance: none;
+    z-index: 2;
 }
 
 /* Rebuy Options */

@@ -1030,11 +1030,25 @@ class WineCellar {
         // Archive button
         document.getElementById('archiveBtn')?.addEventListener('click', () => this.openArchiveList());
 
-        // Archive modal - Star rating (5 stars)
-        document.querySelectorAll('#archiveRating .star').forEach(star => {
-            star.addEventListener('click', () => this.setArchiveRating(parseInt(star.dataset.rating)));
-            star.addEventListener('mouseenter', () => this.previewRating(parseInt(star.dataset.rating)));
-            star.addEventListener('mouseleave', () => this.previewRating(0));
+        // Detail modal - Rating slider
+        document.getElementById('detailRatingInput').addEventListener('input', (e) => {
+            this.updateRatingSlider('detail', parseFloat(e.target.value))
+        })
+        document.getElementById('detailRatingInput').addEventListener('change', (e) => {
+            const rating = parseFloat(e.target.value)
+            this.updateRatingSlider('detail', rating)
+            const wine = this.wines.find(w => w.id === this.currentWineId)
+            if (wine) {
+                wine.rating = rating || null
+                this.saveWines()
+                this.renderWineList()
+            }
+        })
+
+        // Archive modal - Rating slider
+        document.getElementById('archiveRatingInput').addEventListener('input', (e) => {
+            this.archiveRating = parseFloat(e.target.value)
+            this.updateRatingSlider('archive', this.archiveRating)
         });
 
         // Archive modal - Rebuy options
@@ -2447,6 +2461,11 @@ class WineCellar {
             notesSection.style.display = 'none';
         }
 
+        // Rating slider
+        const ratingInput = document.getElementById('detailRatingInput')
+        ratingInput.value = wine.rating || 0
+        this.updateRatingSlider('detail', wine.rating || 0)
+
         // Enrichment Log (admin only)
         const enrichSection = document.getElementById('detailEnrichmentSection')
         if (this.isAdmin && wine.enrichmentLog) {
@@ -2649,11 +2668,9 @@ class WineCellar {
             ? `${wine.name} - ${wine.producer}`
             : wine.name;
 
-        // Reset stars
-        document.querySelectorAll('#archiveRating .star').forEach(star => {
-            star.classList.remove('active', 'hover');
-        });
-        document.getElementById('ratingLabel').textContent = 'Select a rating';
+        // Reset rating slider
+        document.getElementById('archiveRatingInput').value = 0
+        this.updateRatingSlider('archive', 0)
 
         // Reset rebuy buttons
         document.querySelectorAll('#rebuyOptions .rebuy-btn').forEach(btn => {
@@ -2666,49 +2683,36 @@ class WineCellar {
         this.openModal('archiveModal');
     }
 
-    setArchiveRating(rating) {
-        this.archiveRating = rating;
-        // Labels for 5-star ratings
-        const labels = {
-            0: 'Select a rating',
-            1: 'Poor',
-            2: 'Fair',
-            3: 'Good',
-            4: 'Very good',
-            5: 'Excellent!'
-        };
-        document.getElementById('ratingLabel').textContent = labels[rating] || '';
-        this.updateStarDisplay(rating, 'active');
-    }
+    updateRatingSlider(prefix, value) {
+        const pct = (value / 5) * 100
+        document.getElementById(`${prefix}RatingFill`).style.width = `${pct}%`
+        document.getElementById(`${prefix}RatingThumb`).style.left = `${pct}%`
 
-    previewRating(rating) {
-        if (rating === 0) {
-            // Reset to actual rating
-            this.clearStarClass('hover');
-            this.updateStarDisplay(this.archiveRating, 'active');
+        const valueEl = document.getElementById(`${prefix}RatingValue`)
+        const badgeEl = document.getElementById(`${prefix}RatingBadge`)
+
+        if (value === 0) {
+            valueEl.textContent = ''
+            badgeEl.textContent = 'Not rated'
+            badgeEl.className = 'rating-badge'
         } else {
-            this.updateStarDisplay(rating, 'hover');
+            valueEl.innerHTML = `${value.toFixed(1)} <span class="star-icon">★</span>`
+            const { label, cls } = this.getRatingLabel(value)
+            badgeEl.textContent = label
+            badgeEl.className = `rating-badge ${cls}`
         }
     }
 
-    updateStarDisplay(rating, className) {
-        document.querySelectorAll('#archiveRating .star').forEach(star => {
-            const starRating = parseInt(star.dataset.rating);
-            star.classList.toggle(className, starRating <= rating);
-        });
+    getRatingLabel(value) {
+        if (value < 2) return { label: 'Poor', cls: '' }
+        if (value < 3) return { label: 'Fair', cls: '' }
+        if (value < 4) return { label: 'Good', cls: 'good' }
+        if (value < 4.5) return { label: 'Very Good', cls: 'very-good' }
+        return { label: 'Excellent', cls: 'excellent' }
     }
 
-    clearStarClass(className) {
-        document.querySelectorAll('#archiveRating .star').forEach(star => {
-            star.classList.remove(className);
-        });
-    }
-
-    // Helper to generate star display string
     getStarDisplay(rating) {
-        const fullStars = Math.round(rating);
-        const emptyStars = 5 - fullStars;
-        return '★'.repeat(fullStars) + '☆'.repeat(emptyStars);
+        return `${Number(rating).toFixed(1)} ★`
     }
 
     setRebuyOption(option) {
@@ -3017,15 +3021,11 @@ class WineCellar {
 
         document.getElementById('archiveDetailRegion').textContent = wine.region || '';
 
-        // Rating display (supports half-stars)
+        // Rating display
         const starsEl = document.getElementById('archiveDetailStars');
         if (wine.rating) {
-            const fullStars = Math.floor(wine.rating);
-            const hasHalf = wine.rating % 1 !== 0;
-            const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
-            const filledPart = '★'.repeat(fullStars) + (hasHalf ? '⯨' : '');
-            const emptyPart = '☆'.repeat(emptyStars);
-            starsEl.innerHTML = `<span>${filledPart}</span><span class="empty">${emptyPart}</span>`;
+            const { label } = this.getRatingLabel(wine.rating)
+            starsEl.innerHTML = `<span class="rating-value">${Number(wine.rating).toFixed(1)} <span class="star-icon">★</span></span> <span style="font-size:11px;color:#8A8278;margin-left:4px">${label}</span>`;
             starsEl.parentElement.style.display = 'flex';
         } else {
             starsEl.parentElement.style.display = 'none';
