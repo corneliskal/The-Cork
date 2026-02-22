@@ -1013,25 +1013,24 @@ class WineCellar {
         document.getElementById('detailIncrease')?.addEventListener('click', () => this.updateDetailQuantity(1));
         document.getElementById('detailDecrease')?.addEventListener('click', () => this.updateDetailQuantity(-1));
 
-        // Detail modal - Store nudge
-        document.getElementById('detailStoreChips').addEventListener('click', (e) => {
+        // Store popup modal
+        document.getElementById('storeModalChips').addEventListener('click', (e) => {
             const chip = e.target.closest('.store-chip')
             if (!chip) return
-            this.saveDetailStore(chip.dataset.store)
+            this.saveStoreFromModal(chip.dataset.store)
         })
-        document.getElementById('detailStoreSave').addEventListener('click', () => {
-            this.saveDetailStore(document.getElementById('detailStoreInput').value.trim())
+        document.getElementById('storeModalSave').addEventListener('click', () => {
+            this.saveStoreFromModal(document.getElementById('storeModalInput').value.trim())
         })
-        document.getElementById('detailStoreInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') this.saveDetailStore(e.target.value.trim())
+        document.getElementById('storeModalInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.saveStoreFromModal(e.target.value.trim())
         })
+        document.getElementById('storeModalDiscard').addEventListener('click', () => {
+            this.dismissStorePrompt()
+        })
+        // Detail modal - store edit button opens popup
         document.getElementById('detailStoreEditBtn').addEventListener('click', () => {
-            const wine = this.wines.find(w => w.id === this.currentWineId)
-            if (!wine) return
-            document.getElementById('detailStoreDisplay').style.display = 'none'
-            document.getElementById('detailStoreNudge').style.display = ''
-            document.getElementById('detailStoreInput').value = wine.store || ''
-            this.renderStoreChips()
+            this.promptForStore(true)
         })
 
         // Detail modal actions
@@ -2294,6 +2293,9 @@ class WineCellar {
                         }
 
                         this.openDetailModal(wineId);
+
+                        // Store prompt after detail modal opens (if needed)
+                        setTimeout(() => this.promptForStore(), 300)
                     }
                 }
             });
@@ -2624,45 +2626,54 @@ class WineCellar {
 
     getFrequentStores() {
         const counts = {}
+        const canonical = {}
         ;[...this.wines, ...this.archive].forEach(w => {
-            if (w.store) counts[w.store] = (counts[w.store] || 0) + 1
+            if (w.store) {
+                const key = w.store.toLowerCase().trim()
+                counts[key] = (counts[key] || 0) + 1
+                if (!canonical[key]) canonical[key] = w.store
+            }
         })
         return Object.entries(counts)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5)
-            .map(([name]) => name)
+            .map(([key]) => canonical[key])
     }
 
     showStoreSection(wine) {
+        const section = document.getElementById('detailStoreSection')
         const display = document.getElementById('detailStoreDisplay')
-        const nudge = document.getElementById('detailStoreNudge')
 
         if (wine.store) {
+            section.style.display = ''
             display.style.display = 'flex'
-            nudge.style.display = 'none'
             document.getElementById('detailStore').textContent = wine.store
         } else {
-            display.style.display = 'none'
-            nudge.style.display = ''
-            document.getElementById('detailStoreInput').value = ''
-            this.renderStoreChips()
+            section.style.display = 'none'
         }
     }
 
-    renderStoreChips() {
-        const container = document.getElementById('detailStoreChips')
+    promptForStore(force = false) {
+        const wine = this.wines.find(w => w.id === this.currentWineId)
+        if (!wine) return
+        if (!force && (wine.store || wine.storePromptDismissed)) return
+
+        // Render chips in popup
+        const container = document.getElementById('storeModalChips')
         const stores = this.getFrequentStores()
-        if (stores.length === 0) {
+        if (stores.length > 0) {
+            container.style.display = 'flex'
+            container.innerHTML = stores.map(s =>
+                `<button class="store-chip" data-store="${s}">${s}</button>`
+            ).join('')
+        } else {
             container.style.display = 'none'
-            return
         }
-        container.style.display = 'flex'
-        container.innerHTML = stores.map(s =>
-            `<button class="store-chip" data-store="${s}">${s}</button>`
-        ).join('')
+        document.getElementById('storeModalInput').value = ''
+        this.openModal('storeModal')
     }
 
-    saveDetailStore(storeName) {
+    saveStoreFromModal(storeName) {
         if (!storeName) return
         const wine = this.wines.find(w => w.id === this.currentWineId)
         if (!wine) return
@@ -2670,6 +2681,16 @@ class WineCellar {
         this.saveWines()
         this.showStoreSection(wine)
         this.renderWineList()
+        this.closeModal('storeModal')
+    }
+
+    dismissStorePrompt() {
+        const wine = this.wines.find(w => w.id === this.currentWineId)
+        if (wine) {
+            wine.storePromptDismissed = true
+            this.saveWines()
+        }
+        this.closeModal('storeModal')
     }
 
     // ============================

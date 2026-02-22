@@ -1746,35 +1746,44 @@ body {
     padding: 4px 8px;
 }
 
-/* Store nudge */
-.store-nudge-label {
+/* Store popup modal */
+.store-modal {
+    text-align: center;
+    padding: 24px 20px;
+}
+.store-modal-header h2 {
     font-family: 'Outfit', sans-serif;
-    font-size: 9px;
+    font-size: 18px;
     font-weight: 600;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: #b5a898;
-    margin-bottom: 10px;
+    color: #2c1810;
+    margin-bottom: 16px;
 }
 .store-chips {
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-bottom: 12px;
+    padding-bottom: 2px;
+}
+.store-chips::-webkit-scrollbar {
+    display: none;
 }
 .store-chip {
-    padding: 6px 14px;
+    padding: 8px 16px;
     border-radius: 100px;
     border: 1px solid #e8e0d8;
     background: #faf8f5;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
     color: #5c564e;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
-.store-chip:active,
-.store-chip.selected {
+.store-chip:active {
     background: rgba(114,47,55, 0.08);
     border-color: #722F37;
     color: #722F37;
@@ -1782,10 +1791,11 @@ body {
 .store-input-row {
     display: flex;
     gap: 8px;
+    margin-bottom: 12px;
 }
 .store-input {
     flex: 1;
-    padding: 8px 12px;
+    padding: 10px 12px;
     border: 1px solid #e8e0d8;
     border-radius: var(--radius-sm);
     font-size: 14px;
@@ -1797,14 +1807,22 @@ body {
     border-color: #722F37;
 }
 .store-save-btn {
-    padding: 8px 16px;
+    padding: 10px 20px;
     border: none;
     border-radius: var(--radius-sm);
     background: #722F37;
     color: white;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+}
+.store-discard-btn {
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: #b5a898;
+    cursor: pointer;
+    padding: 8px 16px;
 }
 
 /* Expert Ratings */

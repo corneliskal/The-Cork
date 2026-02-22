@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="The Cork">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="styles.css?v=73">
+    <link rel="stylesheet" href="styles.css?v=74">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -498,22 +498,6 @@
                         <div id="detailDrinkTimeline" class="dw-timeline-container"></div>
                     </div>
 
-                    <div id="detailStoreSection" class="detail-store-section">
-                        <div id="detailStoreDisplay" class="detail-store-display">
-                            <span class="store-icon">🛒</span>
-                            <span id="detailStore" class="detail-store-name"></span>
-                            <button class="detail-store-edit" id="detailStoreEditBtn">&#9998;</button>
-                        </div>
-                        <div id="detailStoreNudge" class="detail-store-nudge" style="display:none">
-                            <div class="store-nudge-label">Where did you buy this?</div>
-                            <div id="detailStoreChips" class="store-chips"></div>
-                            <div class="store-input-row">
-                                <input type="text" id="detailStoreInput" class="store-input" placeholder="Store name...">
-                                <button class="store-save-btn" id="detailStoreSave">Save</button>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="detail-profile-section">
                         <div class="detail-profile-title">Profile</div>
                         <div class="detail-profile-bar">
@@ -538,6 +522,14 @@
                     <div id="detailNotesSection" class="detail-notes-section">
                         <div class="detail-notes-label">Notes</div>
                         <div id="detailNotes" class="detail-notes-text"></div>
+                    </div>
+
+                    <div id="detailStoreSection" class="detail-store-section" style="display:none">
+                        <div id="detailStoreDisplay" class="detail-store-display">
+                            <span class="store-icon">🛒</span>
+                            <span id="detailStore" class="detail-store-name"></span>
+                            <button class="detail-store-edit" id="detailStoreEditBtn">&#9998;</button>
+                        </div>
                     </div>
 
                     <div id="detailRatingSection" class="detail-rating-card">
@@ -901,6 +893,21 @@
             </div>
         </div>
 
+        <!-- Store Picker Modal -->
+        <div id="storeModal" class="modal">
+            <div class="modal-content store-modal">
+                <div class="store-modal-header">
+                    <h2>Where did you buy this?</h2>
+                </div>
+                <div id="storeModalChips" class="store-chips"></div>
+                <div class="store-input-row">
+                    <input type="text" id="storeModalInput" class="store-input" placeholder="Store name...">
+                    <button class="store-save-btn" id="storeModalSave">Save</button>
+                </div>
+                <button class="store-discard-btn" id="storeModalDiscard">Not now</button>
+            </div>
+        </div>
+
         <!-- Toast Notification -->
         <div id="toast" class="toast">
             <span id="toastMessage"></span>
@@ -913,7 +920,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
-    <script src="config.js?v=73"></script>
-    <script src="app.js?v=73"></script>
+    <script src="config.js?v=74"></script>
+    <script src="app.js?v=74"></script>
 </body>
 </html>
