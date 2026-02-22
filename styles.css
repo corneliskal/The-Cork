@@ -2870,7 +2870,6 @@ body {
     gap: 4px;
     font-size: 12px;
     color: var(--label-secondary);
-    margin-left: auto;
 }
 
 .rebuy-badge.yes {
