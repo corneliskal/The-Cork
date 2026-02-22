@@ -2833,14 +2833,25 @@ body {
 /* Archive Detail Additions */
 .archive-rating-display {
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: var(--space-8);
     padding: var(--space-12) var(--space-16);
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     margin-bottom: var(--space-20);
-    flex-wrap: wrap;
+}
+
+.archive-rating-display > * {
+    flex: 1;
+}
+
+.archive-rating-display > *:nth-child(2) {
+    display: flex;
+    justify-content: center;
+}
+
+.archive-rating-display > *:last-child {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .rating-stars {
