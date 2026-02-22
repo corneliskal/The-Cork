@@ -2659,8 +2659,8 @@ class WineCellar {
         const wine = this.wines.find(w => w.id === this.currentWineId);
         if (!wine) return;
 
-        // Reset archive modal state
-        this.archiveRating = 0;
+        // Pre-fill archive modal with existing wine data
+        this.archiveRating = wine.rating || 0;
         this.archiveRebuy = null;
 
         // Update UI
@@ -2668,9 +2668,9 @@ class WineCellar {
             ? `${wine.name} - ${wine.producer}`
             : wine.name;
 
-        // Reset rating slider
-        document.getElementById('archiveRatingInput').value = 0
-        this.updateRatingSlider('archive', 0)
+        // Set rating slider to existing rating
+        document.getElementById('archiveRatingInput').value = this.archiveRating
+        this.updateRatingSlider('archive', this.archiveRating)
 
         // Reset rebuy buttons
         document.querySelectorAll('#rebuyOptions .rebuy-btn').forEach(btn => {
