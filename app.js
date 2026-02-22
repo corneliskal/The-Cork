@@ -304,7 +304,14 @@ class WineCellar {
                 firebase.initializeApp(CONFIG.FIREBASE);
             }
 
-            this.db = firebase.database();
+            this.useFirestore = CONFIG.USE_FIRESTORE
+            if (this.useFirestore) {
+                this.db = firebase.firestore()
+                console.log('Using Firestore')
+            } else {
+                this.db = firebase.database()
+                console.log('Using Realtime Database')
+            }
             this.storage = firebase.storage();
             this.updateSyncStatus('connecting');
 
@@ -335,6 +342,107 @@ class WineCellar {
             console.error('Firebase initialization error:', error);
             this.updateSyncStatus('error');
             this.showToast('Cloud sync unavailable - using local storage');
+        }
+    }
+
+    // ============================
+    // Database Abstraction Layer
+    // Supports both Firestore and RTDB via CONFIG.USE_FIRESTORE flag
+    // ============================
+
+    async dbGet(path) {
+        if (this.useFirestore) {
+            const doc = await this.db.doc(path).get()
+            return doc.exists ? doc.data() : null
+        } else {
+            const snapshot = await this.db.ref(path).once('value')
+            return snapshot.val()
+        }
+    }
+
+    async dbExists(path) {
+        if (this.useFirestore) {
+            const doc = await this.db.doc(path).get()
+            return doc.exists
+        } else {
+            const snapshot = await this.db.ref(path).once('value')
+            return snapshot.exists()
+        }
+    }
+
+    async dbSet(path, data) {
+        if (this.useFirestore) {
+            await this.db.doc(path).set(data)
+        } else {
+            await this.db.ref(path).set(data)
+        }
+    }
+
+    async dbUpdate(path, data) {
+        if (this.useFirestore) {
+            await this.db.doc(path).set(data, { merge: true })
+        } else {
+            await this.db.ref(path).update(data)
+        }
+    }
+
+    async dbFieldSet(docPath, field, value) {
+        if (this.useFirestore) {
+            await this.db.doc(docPath).update({ [field]: value })
+        } else {
+            await this.db.ref(`${docPath}/${field}`).set(value)
+        }
+    }
+
+    async dbDelete(path) {
+        if (this.useFirestore) {
+            await this.db.doc(path).delete()
+        } else {
+            await this.db.ref(path).remove()
+        }
+    }
+
+    async dbSetCollection(collectionPath, items) {
+        if (this.useFirestore) {
+            const batch = this.db.batch()
+            const existing = await this.db.collection(collectionPath).get()
+            existing.docs.forEach(doc => batch.delete(doc.ref))
+            Object.entries(items).forEach(([id, data]) => {
+                batch.set(this.db.doc(`${collectionPath}/${id}`), data)
+            })
+            await batch.commit()
+        } else {
+            await this.db.ref(collectionPath).set(items)
+        }
+    }
+
+    dbListen(collectionPath, callback) {
+        if (this.useFirestore) {
+            return this.db.collection(collectionPath).onSnapshot((snapshot) => {
+                const data = snapshot.docs.map(doc => doc.data())
+                callback(data)
+            })
+        } else {
+            const ref = this.db.ref(collectionPath)
+            ref.on('value', (snapshot) => {
+                const val = snapshot.val()
+                callback(val ? Object.values(val) : [])
+            })
+            return () => ref.off()
+        }
+    }
+
+    dbDetach() {
+        if (this.useFirestore) {
+            if (this._unsubWines) this._unsubWines()
+            if (this._unsubArchive) this._unsubArchive()
+            if (this._unsubWishlist) this._unsubWishlist()
+        } else {
+            if (this.db && this.userId) {
+                this.db.ref(`users/${this.userId}/wines`).off()
+                this.db.ref(`users/${this.userId}/archive`).off()
+                this.db.ref(`users/${this.userId}/wishlist`).off()
+            }
         }
     }
 
@@ -448,11 +556,7 @@ class WineCellar {
     async signOut() {
         try {
             // Detach Firebase listeners before signing out
-            if (this.db && this.userId) {
-                this.db.ref(`users/${this.userId}/wines`).off();
-                this.db.ref(`users/${this.userId}/archive`).off();
-                this.db.ref(`users/${this.userId}/wishlist`).off();
-            }
+            this.dbDetach()
             await firebase.auth().signOut();
             this.firebaseEnabled = false;
             this.userId = null;
@@ -514,22 +618,16 @@ class WineCellar {
         if (!this.db || !this.userId) return;
 
         // Detach any existing listeners first
-        this.db.ref(`users/${this.userId}/wines`).off();
-        this.db.ref(`users/${this.userId}/archive`).off();
-        this.db.ref(`users/${this.userId}/wishlist`).off();
+        this.dbDetach()
 
         // Wines listener
-        const winesRef = this.db.ref(`users/${this.userId}/wines`);
-        winesRef.on('value', (snapshot) => {
+        this._unsubWines = this.dbListen(`users/${this.userId}/wines`, (firebaseWines) => {
             console.log('📥 Firebase wines listener triggered. syncInProgress:', this.syncInProgress);
 
             if (this.syncInProgress) {
                 console.log('  ⏸️ Ignoring update (sync in progress)');
                 return;
             }
-
-            const data = snapshot.val();
-            const firebaseWines = data ? Object.values(data) : [];
 
             console.log('  📊 Firebase data received:', firebaseWines.length, 'wines');
 
@@ -544,44 +642,43 @@ class WineCellar {
             this.updateSearchVisibility();
 
             console.log('  ✅ Wines synced from cloud:', this.wines.length);
-        });
+        })
 
         // Archive listener
-        const archiveRef = this.db.ref(`users/${this.userId}/archive`);
-        archiveRef.on('value', (snapshot) => {
+        this._unsubArchive = this.dbListen(`users/${this.userId}/archive`, (firebaseArchive) => {
             if (this.syncInProgress) return;
-
-            const data = snapshot.val();
-            const firebaseArchive = data ? Object.values(data) : [];
 
             console.log('📚 Archive synced from cloud:', firebaseArchive.length, 'items');
 
             this.archive = firebaseArchive;
             this.archive.sort((a, b) => new Date(b.archivedAt) - new Date(a.archivedAt));
-        });
+        })
 
         // Wishlist listener
-        const wishlistRef = this.db.ref(`users/${this.userId}/wishlist`);
-        wishlistRef.on('value', (snapshot) => {
+        this._unsubWishlist = this.dbListen(`users/${this.userId}/wishlist`, (wishlistItems) => {
             if (this.syncInProgress) return;
 
-            const data = snapshot.val();
-            this.wishlist = data ? Object.values(data) : [];
+            this.wishlist = wishlistItems;
             this.wishlist.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
             console.log('💝 Wishlist synced from cloud:', this.wishlist.length, 'items');
-        });
+        })
 
         // One-time migration of base64 images to Storage (after initial data load)
-        archiveRef.once('value', () => {
-            setTimeout(() => this.migrateImagesToStorage(), 2000);
-        });
+        if (this.useFirestore) {
+            this.db.collection(`users/${this.userId}/archive`).get()
+                .then(() => setTimeout(() => this.migrateImagesToStorage(), 2000))
+        } else {
+            this.db.ref(`users/${this.userId}/archive`).once('value', () => {
+                setTimeout(() => this.migrateImagesToStorage(), 2000)
+            })
+        }
     }
 
     async pushWineToFirebase(wine) {
         if (!this.firebaseEnabled || !this.db || !this.userId) return;
 
         try {
-            await this.db.ref(`users/${this.userId}/wines/${wine.id}`).set(wine);
+            await this.dbSet(`users/${this.userId}/wines/${wine.id}`, wine)
         } catch (error) {
             console.error('Error pushing wine to Firebase:', error);
         }
@@ -603,16 +700,16 @@ class WineCellar {
             console.log('  Full path:', path);
 
             // First check if the wine exists in Firebase
-            const snapshot = await this.db.ref(path).once('value');
-            console.log('  Wine exists in Firebase:', snapshot.exists());
+            const exists = await this.dbExists(path)
+            console.log('  Wine exists in Firebase:', exists);
 
-            if (snapshot.exists()) {
-                await this.db.ref(path).remove();
+            if (exists) {
+                await this.dbDelete(path)
                 console.log('✅ Wine deleted from Firebase successfully');
 
                 // Verify the delete worked
-                const verifySnapshot = await this.db.ref(path).once('value');
-                console.log('  Verified deleted:', !verifySnapshot.exists());
+                const stillExists = await this.dbExists(path)
+                console.log('  Verified deleted:', !stillExists);
                 return true;
             } else {
                 console.log('⚠️ Wine was not found in Firebase - may already be deleted');
@@ -637,7 +734,7 @@ class WineCellar {
                 winesObject[wine.id] = wine;
             });
 
-            await this.db.ref(`users/${this.userId}/wines`).set(winesObject);
+            await this.dbSetCollection(`users/${this.userId}/wines`, winesObject)
 
             this.updateSyncStatus('synced');
             console.log('Wines saved to cloud');
@@ -698,7 +795,7 @@ class WineCellar {
 
         if (this.firebaseEnabled && this.db && this.userId) {
             try {
-                await this.db.ref(`users/${this.userId}/archive/${archivedWine.id}`).set(archivedWine);
+                await this.dbSet(`users/${this.userId}/archive/${archivedWine.id}`, archivedWine)
             } catch (error) {
                 console.error('Error pushing to archive in Firebase:', error);
             }
@@ -710,7 +807,7 @@ class WineCellar {
 
         if (this.firebaseEnabled && this.db && this.userId) {
             try {
-                await this.db.ref(`users/${this.userId}/archive/${archiveId}`).remove();
+                await this.dbDelete(`users/${this.userId}/archive/${archiveId}`)
             } catch (error) {
                 console.error('Error deleting from archive in Firebase:', error);
             }
@@ -790,9 +887,11 @@ class WineCellar {
 
         try {
             // Check if already migrated
-            const flagRef = this.db.ref(`users/${this.userId}/imagesMigrated`);
-            const flagSnap = await flagRef.once('value');
-            if (flagSnap.val() === true) return;
+            const flagPath = this.useFirestore
+                ? `users/${this.userId}/meta/imagesMigrated`
+                : `users/${this.userId}/imagesMigrated`
+            const flagData = await this.dbGet(flagPath)
+            if (flagData === true || flagData?.done === true) return;
 
             // Collect all items with base64 images
             const toMigrate = [];
@@ -804,7 +903,7 @@ class WineCellar {
             });
 
             if (toMigrate.length === 0) {
-                await flagRef.set(true);
+                await this.dbSet(flagPath, this.useFirestore ? { done: true } : true)
                 return;
             }
 
@@ -817,7 +916,7 @@ class WineCellar {
                 if (url) {
                     item.image = url;
                     // Update in Firebase immediately
-                    await this.db.ref(`users/${this.userId}/${type}/${item.id}/image`).set(url);
+                    await this.dbFieldSet(`users/${this.userId}/${type}/${item.id}`, 'image', url)
                 }
                 done++;
                 if (done % 5 === 0) {
@@ -825,7 +924,7 @@ class WineCellar {
                 }
             }
 
-            await flagRef.set(true);
+            await this.dbSet(flagPath, this.useFirestore ? { done: true } : true)
             console.log('✅ Image migration complete');
             this.showToast('Image migration complete!');
         } catch (error) {
@@ -1753,8 +1852,7 @@ class WineCellar {
     async lookupCatalog(catalogKey) {
         if (!this.db || !catalogKey) return null
         try {
-            const snapshot = await this.db.ref(`catalog/${catalogKey}`).once('value')
-            return snapshot.val()
+            return await this.dbGet(`catalog/${catalogKey}`)
         } catch (e) {
             console.log('Catalog lookup failed:', e.message)
             return null
@@ -1776,7 +1874,7 @@ class WineCellar {
                 updatedAt: new Date().toISOString()
             }
             Object.keys(entry).forEach(k => { if (entry[k] == null) delete entry[k] })
-            await this.db.ref(`catalog/${catalogKey}`).update(entry)
+            await this.dbUpdate(`catalog/${catalogKey}`, entry)
             console.log('Catalog updated:', catalogKey)
         } catch (e) {
             console.log('Catalog write failed:', e.message)
@@ -1791,7 +1889,7 @@ class WineCellar {
             const ref = this.storage.ref(`catalog-images/${catalogKey}.jpg`)
             await ref.put(blob, { contentType: 'image/jpeg' })
             const url = await ref.getDownloadURL()
-            await this.db.ref(`catalog/${catalogKey}/image`).set(url)
+            await this.dbFieldSet(`catalog/${catalogKey}`, 'image', url)
             return url
         } catch (e) {
             console.log('Catalog image upload failed:', e.message)
@@ -3378,7 +3476,7 @@ class WineCellar {
             this.wishlist.forEach(wine => {
                 wishlistObject[wine.id] = wine;
             });
-            this.db.ref(`users/${this.userId}/wishlist`).set(wishlistObject)
+            this.dbSetCollection(`users/${this.userId}/wishlist`, wishlistObject)
                 .catch(err => console.error('Error saving wishlist:', err));
         }
     }
@@ -3472,7 +3570,7 @@ class WineCellar {
         // Remove from wishlist
         this.wishlist = this.wishlist.filter(w => w.id !== this.currentWishlistId);
         if (this.firebaseEnabled && this.db && this.userId) {
-            this.db.ref(`users/${this.userId}/wishlist/${this.currentWishlistId}`).remove();
+            this.dbDelete(`users/${this.userId}/wishlist/${this.currentWishlistId}`)
         }
 
         // Add to cellar
@@ -3493,7 +3591,7 @@ class WineCellar {
 
         this.wishlist = this.wishlist.filter(w => w.id !== this.currentWishlistId);
         if (this.firebaseEnabled && this.db && this.userId) {
-            this.db.ref(`users/${this.userId}/wishlist/${this.currentWishlistId}`).remove();
+            this.dbDelete(`users/${this.userId}/wishlist/${this.currentWishlistId}`)
         }
 
         // Clean up image from Storage

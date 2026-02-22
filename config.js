@@ -3,6 +3,9 @@
 // ============================
 
 const CONFIG = {
+    // Flip to false for instant rollback to Realtime Database
+    USE_FIRESTORE: true,
+
     // ============================
     // Firebase Configuration
     // ============================
