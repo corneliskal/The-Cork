@@ -307,7 +307,9 @@ class WineCellar {
             this.useFirestore = CONFIG.USE_FIRESTORE
             if (this.useFirestore) {
                 this.db = firebase.firestore()
-                console.log('Using Firestore')
+                this.db.enablePersistence({ synchronizeTabs: true })
+                    .catch(err => console.warn('Offline persistence niet beschikbaar:', err.code))
+                console.log('Using Firestore with offline persistence')
             } else {
                 this.db = firebase.database()
                 console.log('Using Realtime Database')
