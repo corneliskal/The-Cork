@@ -1013,6 +1013,27 @@ class WineCellar {
         document.getElementById('detailIncrease')?.addEventListener('click', () => this.updateDetailQuantity(1));
         document.getElementById('detailDecrease')?.addEventListener('click', () => this.updateDetailQuantity(-1));
 
+        // Detail modal - Store nudge
+        document.getElementById('detailStoreChips').addEventListener('click', (e) => {
+            const chip = e.target.closest('.store-chip')
+            if (!chip) return
+            this.saveDetailStore(chip.dataset.store)
+        })
+        document.getElementById('detailStoreSave').addEventListener('click', () => {
+            this.saveDetailStore(document.getElementById('detailStoreInput').value.trim())
+        })
+        document.getElementById('detailStoreInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.saveDetailStore(e.target.value.trim())
+        })
+        document.getElementById('detailStoreEditBtn').addEventListener('click', () => {
+            const wine = this.wines.find(w => w.id === this.currentWineId)
+            if (!wine) return
+            document.getElementById('detailStoreDisplay').style.display = 'none'
+            document.getElementById('detailStoreNudge').style.display = ''
+            document.getElementById('detailStoreInput').value = wine.store || ''
+            this.renderStoreChips()
+        })
+
         // Detail modal actions
         document.getElementById('editWineBtn')?.addEventListener('click', () => this.editCurrentWine());
         document.getElementById('deleteWineBtn')?.addEventListener('click', () => this.openDeleteModal());
@@ -2442,14 +2463,7 @@ class WineCellar {
         }
 
         // Store
-        const storeSection = document.getElementById('detailStoreSection');
-        const storeText = document.getElementById('detailStore');
-        if (wine.store) {
-            storeSection.style.display = 'flex';
-            storeText.textContent = wine.store;
-        } else {
-            storeSection.style.display = 'none';
-        }
+        this.showStoreSection(wine)
 
         // Notes
         const notesSection = document.getElementById('detailNotesSection');
@@ -2602,6 +2616,60 @@ class WineCellar {
         document.getElementById('detailQuantity').textContent = newQty;
         this.renderWineList();
         this.updateStats();
+    }
+
+    // ============================
+    // Store Nudge
+    // ============================
+
+    getFrequentStores() {
+        const counts = {}
+        ;[...this.wines, ...this.archive].forEach(w => {
+            if (w.store) counts[w.store] = (counts[w.store] || 0) + 1
+        })
+        return Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name]) => name)
+    }
+
+    showStoreSection(wine) {
+        const display = document.getElementById('detailStoreDisplay')
+        const nudge = document.getElementById('detailStoreNudge')
+
+        if (wine.store) {
+            display.style.display = 'flex'
+            nudge.style.display = 'none'
+            document.getElementById('detailStore').textContent = wine.store
+        } else {
+            display.style.display = 'none'
+            nudge.style.display = ''
+            document.getElementById('detailStoreInput').value = ''
+            this.renderStoreChips()
+        }
+    }
+
+    renderStoreChips() {
+        const container = document.getElementById('detailStoreChips')
+        const stores = this.getFrequentStores()
+        if (stores.length === 0) {
+            container.style.display = 'none'
+            return
+        }
+        container.style.display = 'flex'
+        container.innerHTML = stores.map(s =>
+            `<button class="store-chip" data-store="${s}">${s}</button>`
+        ).join('')
+    }
+
+    saveDetailStore(storeName) {
+        if (!storeName) return
+        const wine = this.wines.find(w => w.id === this.currentWineId)
+        if (!wine) return
+        wine.store = storeName
+        this.saveWines()
+        this.showStoreSection(wine)
+        this.renderWineList()
     }
 
     // ============================

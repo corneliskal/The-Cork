@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="The Cork">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="stylesheet" href="styles.css?v=72">
+    <link rel="stylesheet" href="styles.css?v=73">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Outfit:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -498,9 +498,20 @@
                         <div id="detailDrinkTimeline" class="dw-timeline-container"></div>
                     </div>
 
-                    <div id="detailStoreSection" class="detail-store">
-                        <span class="store-icon">🛒</span>
-                        <span id="detailStore">Winkel</span>
+                    <div id="detailStoreSection" class="detail-store-section">
+                        <div id="detailStoreDisplay" class="detail-store-display">
+                            <span class="store-icon">🛒</span>
+                            <span id="detailStore" class="detail-store-name"></span>
+                            <button class="detail-store-edit" id="detailStoreEditBtn">&#9998;</button>
+                        </div>
+                        <div id="detailStoreNudge" class="detail-store-nudge" style="display:none">
+                            <div class="store-nudge-label">Where did you buy this?</div>
+                            <div id="detailStoreChips" class="store-chips"></div>
+                            <div class="store-input-row">
+                                <input type="text" id="detailStoreInput" class="store-input" placeholder="Store name...">
+                                <button class="store-save-btn" id="detailStoreSave">Save</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="detail-profile-section">
@@ -902,7 +913,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
-    <script src="config.js?v=72"></script>
-    <script src="app.js?v=72"></script>
+    <script src="config.js?v=73"></script>
+    <script src="app.js?v=73"></script>
 </body>
 </html>
