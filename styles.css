@@ -667,7 +667,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    color: rgba(255,255,255,0.6);
 }
 
 .wine-card-image .placeholder-image.red { background: linear-gradient(135deg, var(--red-wine), #4a1c22); }
@@ -1729,7 +1729,8 @@ body {
     gap: var(--space-8);
 }
 .detail-store-display .store-icon {
-    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
 }
 .detail-store-name {
     font-size: 14px;
@@ -2445,7 +2446,9 @@ body {
 }
 
 .rebuy-btn .rebuy-icon {
-    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .rebuy-btn span:last-child {
@@ -2700,8 +2703,9 @@ body {
 }
 
 .archive-empty-icon {
-    font-size: 3rem;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: var(--space-16);
 }
 
@@ -2764,7 +2768,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    color: rgba(255,255,255,0.6);
 }
 
 .archive-card-info {

@@ -2242,7 +2242,7 @@ class WineCellar {
                         <div class="wine-card-image">
                             ${wine.image
                                 ? `<img src="${wine.image}" alt="${wine.name}">`
-                                : `<div class="placeholder-image ${wine.type}">🍷</div>`
+                                : `<div class="placeholder-image ${wine.type}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M8 22h8"/><path d="M12 17v5"/><path d="M17 2H7l1 7c0 2.8 1.8 5 4 5s4-2.2 4-5l1-7z"/></svg></div>`
                             }
                         </div>
                         <div class="wine-card-info">
@@ -2995,7 +2995,7 @@ class WineCellar {
                             <div class="archive-card-image">
                                 ${wine.image
                                     ? `<img src="${wine.image}" alt="${wine.name}">`
-                                    : `<div class="placeholder-image ${wine.type}">🍷</div>`
+                                    : `<div class="placeholder-image ${wine.type}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M8 22h8"/><path d="M12 17v5"/><path d="M17 2H7l1 7c0 2.8 1.8 5 4 5s4-2.2 4-5l1-7z"/></svg></div>`
                                 }
                             </div>
                             <div class="archive-card-info">
@@ -3124,9 +3124,9 @@ class WineCellar {
         const rebuyEl = document.getElementById('archiveDetailRebuy');
         if (wine.rebuy) {
             const rebuyConfig = {
-                yes: { icon: '👍', text: 'Rebuy', class: 'yes' },
-                maybe: { icon: '🤔', text: 'Maybe', class: 'maybe' },
-                no: { icon: '👎', text: 'Don\'t rebuy', class: 'no' }
+                yes: { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>', text: 'Rebuy', class: 'yes' },
+                maybe: { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="12" cy="12" r="10"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>', text: 'Maybe', class: 'maybe' },
+                no: { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M10 15V19a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17"/></svg>', text: 'Don\'t rebuy', class: 'no' }
             };
             const config = rebuyConfig[wine.rebuy];
             rebuyEl.innerHTML = `<span class="rebuy-icon">${config.icon}</span><span>${config.text}</span>`;
@@ -3277,7 +3277,7 @@ class WineCellar {
                 <div class="archive-card-image">
                     ${wine.image
                         ? `<img src="${wine.image}" alt="${wine.name}">`
-                        : `<div class="placeholder-image ${wine.type || 'red'}">🍷</div>`}
+                        : `<div class="placeholder-image ${wine.type || 'red'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M8 22h8"/><path d="M12 17v5"/><path d="M17 2H7l1 7c0 2.8 1.8 5 4 5s4-2.2 4-5l1-7z"/></svg></div>`}
                 </div>
                 <div class="archive-card-info">
                     <div class="archive-card-name">${wine.name || 'Unknown'}</div>
@@ -3308,7 +3308,7 @@ class WineCellar {
         if (wine.image) {
             heroContent.innerHTML = `<img src="${wine.image}" alt="${wine.name}" style="width:100%;height:100%;object-fit:contain;padding:16px;background:#ffffff">`;
         } else {
-            heroContent.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:4rem;opacity:0.3">🍷</div>`;
+            heroContent.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;opacity:0.3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="64" height="64"><path d="M8 22h8"/><path d="M12 17v5"/><path d="M17 2H7l1 7c0 2.8 1.8 5 4 5s4-2.2 4-5l1-7z"/></svg></div>`;
         }
 
         document.getElementById('wishlistDetailTypeBadge').textContent = wine.type || '';
