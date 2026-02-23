@@ -1034,8 +1034,8 @@ body {
 }
 
 .wine-card-image {
-    width: 66px;
-    height: 66px;
+    width: 80px;
+    height: 80px;
     border-radius: var(--radius-sm);
     overflow: hidden;
     flex-shrink: 0;
