@@ -241,6 +241,21 @@ class WineCellar {
             sort: null
         }
 
+        // Archive filter state
+        this.archiveTypeFilter = 'all'
+        this.archiveGrapeFilter = 'all'
+        this.archiveShopFilter = 'all'
+        this.archiveOpenDropdownId = null
+        this.archiveAdvancedFilters = {
+            rebuy: null,
+            regions: new Set(),
+            countries: new Set(),
+            producers: new Set(),
+            years: new Set(),
+            priceRange: null,
+            sort: null
+        }
+
         // Firebase
         this.db = null;
         this.userId = null;
@@ -1038,6 +1053,12 @@ class WineCellar {
                     this.closeAllDropdowns()
                 }
             }
+            if (this.archiveOpenDropdownId) {
+                const openContainer = document.getElementById('archive' + this.archiveOpenDropdownId.charAt(0).toUpperCase() + this.archiveOpenDropdownId.slice(1) + 'Dropdown')
+                if (openContainer && !openContainer.contains(e.target)) {
+                    this.closeAllArchiveDropdowns()
+                }
+            }
         })
 
         // FAB button
@@ -1214,9 +1235,55 @@ class WineCellar {
             this.filterAndRenderArchive();
         });
 
-        // Archive list - Filters
-        document.getElementById('archiveTypeFilter')?.addEventListener('change', () => this.filterAndRenderArchive());
-        document.getElementById('archiveRebuyFilter')?.addEventListener('change', () => this.filterAndRenderArchive());
+        // Archive filter dropdown buttons
+        document.querySelectorAll('[data-archive-dropdown]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                this.toggleArchiveDropdown(btn.dataset.archiveDropdown)
+            })
+        })
+
+        // Archive filter option clicks
+        document.querySelectorAll('[data-archive-menu]').forEach(menu => {
+            menu.addEventListener('click', (e) => {
+                const option = e.target.closest('.filter-dropdown-option')
+                if (!option) return
+                e.stopPropagation()
+                const filterType = option.dataset.archiveFilter
+                const value = option.dataset.value
+                this.selectArchiveFilter(filterType, value)
+            })
+        })
+
+        // Archive filter clear buttons
+        document.querySelectorAll('[data-archive-clear]').forEach(clearBtn => {
+            clearBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                this.clearArchiveFilter(clearBtn.dataset.archiveClear)
+            })
+        })
+
+        // Archive advanced filter button
+        document.getElementById('archiveAdvancedBtn')?.addEventListener('click', () => this.openArchiveAdvancedPanel())
+        document.getElementById('archiveAdvancedClose')?.addEventListener('click', () => {
+            document.getElementById('archiveAdvancedModal')?.classList.remove('active')
+        })
+        document.getElementById('archiveAdvancedReset')?.addEventListener('click', () => this.resetArchiveAdvancedFilters())
+        document.getElementById('archiveAdvancedApply')?.addEventListener('click', () => this.applyArchiveAdvancedFilters())
+
+        // Archive clear all filters
+        document.getElementById('archiveClearAllFilters')?.addEventListener('click', () => this.clearAllArchiveFilters())
+
+        // Archive active filter tag clicks
+        document.getElementById('archiveActiveFilterTags')?.addEventListener('click', (e) => {
+            const tag = e.target.closest('.active-filter-tag')
+            if (!tag) return
+            const filterType = tag.dataset.filterType
+            if (filterType === 'type') this.clearArchiveFilter('type')
+            else if (filterType === 'grape') this.clearArchiveFilter('grape')
+            else if (filterType === 'shop') this.clearArchiveFilter('shop')
+            else if (filterType === 'advanced') this.openArchiveAdvancedPanel()
+        })
 
         // Archive detail - Actions
         document.getElementById('restoreWineBtn')?.addEventListener('click', () => this.restoreWineFromArchive());
@@ -3536,52 +3603,520 @@ class WineCellar {
 
     openArchiveList() {
         // Reset search and filters
-        document.getElementById('archiveSearchInput').value = '';
-        document.getElementById('archiveTypeFilter').value = '';
-        document.getElementById('archiveRebuyFilter').value = '';
-        this.archiveSearchQuery = '';
+        document.getElementById('archiveSearchInput').value = ''
+        this.archiveSearchQuery = ''
+        this.archiveTypeFilter = 'all'
+        this.archiveGrapeFilter = 'all'
+        this.archiveShopFilter = 'all'
+        this.archiveAdvancedFilters = {
+            rebuy: null,
+            regions: new Set(),
+            countries: new Set(),
+            producers: new Set(),
+            years: new Set(),
+            priceRange: null,
+            sort: null
+        }
 
-        this.filterAndRenderArchive();
-        this.openModal('archiveListModal');
+        this.populateArchiveGrapeDropdown()
+        this.populateArchiveShopDropdown()
+        this.updateArchiveFilterDropdownUI()
+        this.updateArchiveActiveFilterBar()
+        this.filterAndRenderArchive()
+        this.openModal('archiveListModal')
     }
 
     filterAndRenderArchive() {
-        const typeFilter = document.getElementById('archiveTypeFilter')?.value || '';
-        const rebuyFilter = document.getElementById('archiveRebuyFilter')?.value || '';
-        const clearBtn = document.getElementById('clearArchiveSearch');
+        const clearBtn = document.getElementById('clearArchiveSearch')
 
-        // Show/hide clear button
         if (this.archiveSearchQuery) {
-            clearBtn?.classList.remove('hidden');
+            clearBtn?.classList.remove('hidden')
         } else {
-            clearBtn?.classList.add('hidden');
+            clearBtn?.classList.add('hidden')
         }
 
         // Filter archive
         this.filteredArchive = this.archive.filter(wine => {
             // Type filter
-            if (typeFilter && wine.type !== typeFilter) return false;
+            if (this.archiveTypeFilter !== 'all' && wine.type !== this.archiveTypeFilter) return false
 
-            // Rebuy filter
-            if (rebuyFilter && wine.rebuy !== rebuyFilter) return false;
+            // Grape filter
+            if (this.archiveGrapeFilter !== 'all') {
+                const grape = (wine.grape || '').toLowerCase()
+                if (!grape.includes(this.archiveGrapeFilter.toLowerCase())) return false
+            }
+
+            // Shop filter
+            if (this.archiveShopFilter !== 'all') {
+                const store = (wine.store || '').toLowerCase().trim()
+                if (store !== this.archiveShopFilter) return false
+            }
+
+            // Advanced: rebuy
+            if (this.archiveAdvancedFilters.rebuy) {
+                if (wine.rebuy !== this.archiveAdvancedFilters.rebuy) return false
+            }
+
+            // Advanced: region
+            if (this.archiveAdvancedFilters.regions.size > 0) {
+                const region = (wine.region || '').split(',')[0].trim().toLowerCase()
+                if (!this.archiveAdvancedFilters.regions.has(region)) return false
+            }
+
+            // Advanced: country
+            if (this.archiveAdvancedFilters.countries.size > 0) {
+                const parts = (wine.region || '').split(',').map(p => p.trim())
+                const country = (parts.length > 1 ? parts[parts.length - 1] : '').toLowerCase()
+                if (!this.archiveAdvancedFilters.countries.has(country)) return false
+            }
+
+            // Advanced: producer
+            if (this.archiveAdvancedFilters.producers.size > 0) {
+                if (!this.archiveAdvancedFilters.producers.has((wine.producer || '').toLowerCase().trim())) return false
+            }
+
+            // Advanced: year
+            if (this.archiveAdvancedFilters.years.size > 0) {
+                if (!this.archiveAdvancedFilters.years.has(wine.year)) return false
+            }
+
+            // Advanced: price range
+            if (this.archiveAdvancedFilters.priceRange) {
+                if (!wine.price) return false
+                if (this.archiveAdvancedFilters.priceRange === 'low' && wine.price >= 20) return false
+                if (this.archiveAdvancedFilters.priceRange === 'mid' && (wine.price < 20 || wine.price > 40)) return false
+                if (this.archiveAdvancedFilters.priceRange === 'high' && wine.price <= 40) return false
+            }
 
             // Search query
             if (this.archiveSearchQuery) {
                 const searchFields = [
-                    wine.name,
-                    wine.producer,
-                    wine.region,
-                    wine.grape,
-                    wine.store
-                ].filter(Boolean).join(' ').toLowerCase();
-
-                if (!searchFields.includes(this.archiveSearchQuery)) return false;
+                    wine.name, wine.producer, wine.region, wine.grape, wine.store
+                ].filter(Boolean).join(' ').toLowerCase()
+                if (!searchFields.includes(this.archiveSearchQuery)) return false
             }
 
-            return true;
-        });
+            return true
+        })
 
-        this.renderArchiveList();
+        // Apply sort from advanced
+        if (this.archiveAdvancedFilters.sort) {
+            const s = this.archiveAdvancedFilters.sort
+            this.filteredArchive.sort((a, b) => {
+                if (s === 'name_asc') return (a.name || '').localeCompare(b.name || '')
+                if (s === 'price_asc') {
+                    if (!a.price) return 1; if (!b.price) return -1; return a.price - b.price
+                }
+                if (s === 'price_desc') {
+                    if (!a.price) return 1; if (!b.price) return -1; return b.price - a.price
+                }
+                if (s === 'year_desc') return (b.year || 0) - (a.year || 0)
+                if (s === 'rating_desc') return (b.rating || 0) - (a.rating || 0)
+                return new Date(b.archivedAt) - new Date(a.archivedAt)
+            })
+        }
+
+        this.renderArchiveList()
+    }
+
+    // ============================
+    // Archive Filter Dropdown Logic
+    // ============================
+
+    populateArchiveGrapeDropdown() {
+        const menu = document.querySelector('[data-archive-menu="grape"]')
+        if (!menu) return
+        const grapes = new Map()
+        this.archive.forEach(wine => {
+            if (wine.grape) {
+                const primary = wine.grape.split(',')[0].trim()
+                const key = primary.toLowerCase()
+                if (!grapes.has(key)) grapes.set(key, primary)
+            }
+        })
+        const sorted = [...grapes.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+        menu.innerHTML = sorted.map(([key, label]) =>
+            `<button class="filter-dropdown-option${this.archiveGrapeFilter === key ? ' selected' : ''}" data-archive-filter="grape" data-value="${key}"><span class="filter-opt-label">${this.escapeHtml(label)}</span></button>`
+        ).join('')
+    }
+
+    populateArchiveShopDropdown() {
+        const menu = document.querySelector('[data-archive-menu="shop"]')
+        if (!menu) return
+        const shops = new Map()
+        this.archive.forEach(wine => {
+            if (wine.store) {
+                const key = wine.store.toLowerCase().trim()
+                if (!shops.has(key)) shops.set(key, wine.store.trim())
+            }
+        })
+        const sorted = [...shops.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+        menu.innerHTML = sorted.map(([key, label]) =>
+            `<button class="filter-dropdown-option${this.archiveShopFilter === key ? ' selected' : ''}" data-archive-filter="shop" data-value="${key}"><span class="filter-opt-label">${this.escapeHtml(label)}</span></button>`
+        ).join('')
+    }
+
+    toggleArchiveDropdown(dropdownType) {
+        const idMap = { type: 'archiveTypeDropdown', grape: 'archiveGrapeDropdown', shop: 'archiveShopDropdown' }
+        const container = document.getElementById(idMap[dropdownType])
+        const menu = container?.querySelector('.filter-dropdown-menu')
+        if (!menu) return
+
+        if (this.archiveOpenDropdownId === dropdownType) {
+            this.closeAllArchiveDropdowns()
+            return
+        }
+
+        this.closeAllArchiveDropdowns()
+        menu.classList.remove('hidden')
+        container.classList.add('open')
+        this.archiveOpenDropdownId = dropdownType
+    }
+
+    closeAllArchiveDropdowns() {
+        document.querySelectorAll('#archiveFilterRow .filter-dropdown-menu').forEach(m => m.classList.add('hidden'))
+        document.querySelectorAll('#archiveFilterRow .filter-dropdown').forEach(d => d.classList.remove('open'))
+        this.archiveOpenDropdownId = null
+    }
+
+    selectArchiveFilter(filterType, value) {
+        if (filterType === 'type') {
+            this.archiveTypeFilter = this.archiveTypeFilter === value ? 'all' : value
+        } else if (filterType === 'grape') {
+            this.archiveGrapeFilter = this.archiveGrapeFilter === value ? 'all' : value
+        } else if (filterType === 'shop') {
+            this.archiveShopFilter = this.archiveShopFilter === value ? 'all' : value
+        }
+
+        this.closeAllArchiveDropdowns()
+        this.updateArchiveFilterDropdownUI()
+        this.updateArchiveActiveFilterBar()
+        this.filterAndRenderArchive()
+    }
+
+    clearArchiveFilter(filterType) {
+        if (filterType === 'type') this.archiveTypeFilter = 'all'
+        else if (filterType === 'grape') this.archiveGrapeFilter = 'all'
+        else if (filterType === 'shop') this.archiveShopFilter = 'all'
+
+        this.updateArchiveFilterDropdownUI()
+        this.updateArchiveActiveFilterBar()
+        this.filterAndRenderArchive()
+    }
+
+    clearAllArchiveFilters() {
+        this.archiveTypeFilter = 'all'
+        this.archiveGrapeFilter = 'all'
+        this.archiveShopFilter = 'all'
+        this.archiveAdvancedFilters = {
+            rebuy: null,
+            regions: new Set(),
+            countries: new Set(),
+            producers: new Set(),
+            years: new Set(),
+            priceRange: null,
+            sort: null
+        }
+        this.updateArchiveFilterDropdownUI()
+        this.updateArchiveActiveFilterBar()
+        this.filterAndRenderArchive()
+    }
+
+    updateArchiveFilterDropdownUI() {
+        // Type
+        const typeBtn = document.querySelector('[data-archive-dropdown="type"]')
+        const typeClear = document.querySelector('[data-archive-clear="type"]')
+        const typeText = document.querySelector('[data-archive-text="type"]')
+        if (this.archiveTypeFilter !== 'all') {
+            typeBtn?.classList.add('has-value')
+            typeClear?.classList.remove('hidden')
+            if (typeText) typeText.textContent = this.archiveTypeFilter.charAt(0).toUpperCase() + this.archiveTypeFilter.slice(1)
+            document.querySelectorAll('[data-archive-menu="type"] .filter-dropdown-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.value === this.archiveTypeFilter)
+            })
+        } else {
+            typeBtn?.classList.remove('has-value')
+            typeClear?.classList.add('hidden')
+            if (typeText) typeText.textContent = 'Type'
+            document.querySelectorAll('[data-archive-menu="type"] .filter-dropdown-option').forEach(opt => opt.classList.remove('selected'))
+        }
+
+        // Grape
+        const grapeBtn = document.querySelector('[data-archive-dropdown="grape"]')
+        const grapeClear = document.querySelector('[data-archive-clear="grape"]')
+        const grapeText = document.querySelector('[data-archive-text="grape"]')
+        if (this.archiveGrapeFilter !== 'all') {
+            grapeBtn?.classList.add('has-value')
+            grapeClear?.classList.remove('hidden')
+            const selectedOpt = document.querySelector(`[data-archive-menu="grape"] [data-value="${this.archiveGrapeFilter}"]`)
+            if (grapeText) grapeText.textContent = selectedOpt?.textContent?.trim() || this.archiveGrapeFilter
+            document.querySelectorAll('[data-archive-menu="grape"] .filter-dropdown-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.value === this.archiveGrapeFilter)
+            })
+        } else {
+            grapeBtn?.classList.remove('has-value')
+            grapeClear?.classList.add('hidden')
+            if (grapeText) grapeText.textContent = 'Grape'
+            document.querySelectorAll('[data-archive-menu="grape"] .filter-dropdown-option').forEach(opt => opt.classList.remove('selected'))
+        }
+
+        // Shop
+        const shopBtn = document.querySelector('[data-archive-dropdown="shop"]')
+        const shopClear = document.querySelector('[data-archive-clear="shop"]')
+        const shopText = document.querySelector('[data-archive-text="shop"]')
+        if (this.archiveShopFilter !== 'all') {
+            shopBtn?.classList.add('has-value')
+            shopClear?.classList.remove('hidden')
+            const selectedOpt = document.querySelector(`[data-archive-menu="shop"] [data-value="${this.archiveShopFilter}"]`)
+            if (shopText) shopText.textContent = selectedOpt?.textContent?.trim() || this.archiveShopFilter
+            document.querySelectorAll('[data-archive-menu="shop"] .filter-dropdown-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.value === this.archiveShopFilter)
+            })
+        } else {
+            shopBtn?.classList.remove('has-value')
+            shopClear?.classList.add('hidden')
+            if (shopText) shopText.textContent = 'Shop'
+            document.querySelectorAll('[data-archive-menu="shop"] .filter-dropdown-option').forEach(opt => opt.classList.remove('selected'))
+        }
+
+        // Advanced badge
+        const advCount = this.getArchiveAdvancedFilterCount()
+        const badge = document.getElementById('archiveAdvancedBadge')
+        const advBtn = document.getElementById('archiveAdvancedBtn')
+        if (advCount > 0) {
+            badge?.classList.remove('hidden')
+            if (badge) badge.textContent = advCount
+            advBtn?.classList.add('has-value')
+        } else {
+            badge?.classList.add('hidden')
+            advBtn?.classList.remove('has-value')
+        }
+    }
+
+    getArchiveAdvancedFilterCount() {
+        let count = 0
+        if (this.archiveAdvancedFilters.rebuy) count++
+        if (this.archiveAdvancedFilters.regions.size > 0) count++
+        if (this.archiveAdvancedFilters.countries.size > 0) count++
+        if (this.archiveAdvancedFilters.producers.size > 0) count++
+        if (this.archiveAdvancedFilters.years.size > 0) count++
+        if (this.archiveAdvancedFilters.priceRange) count++
+        if (this.archiveAdvancedFilters.sort) count++
+        return count
+    }
+
+    getArchiveTotalFilterCount() {
+        let count = 0
+        if (this.archiveTypeFilter !== 'all') count++
+        if (this.archiveGrapeFilter !== 'all') count++
+        if (this.archiveShopFilter !== 'all') count++
+        count += this.getArchiveAdvancedFilterCount()
+        return count
+    }
+
+    updateArchiveActiveFilterBar() {
+        const bar = document.getElementById('archiveActiveFilterBar')
+        const countEl = document.getElementById('archiveActiveFilterCount')
+        const tagsEl = document.getElementById('archiveActiveFilterTags')
+        if (!bar || !countEl || !tagsEl) return
+
+        const total = this.getArchiveTotalFilterCount()
+        if (total === 0) {
+            bar.classList.add('hidden')
+            return
+        }
+
+        bar.classList.remove('hidden')
+        countEl.textContent = total
+
+        const xSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>'
+        let tags = ''
+
+        if (this.archiveTypeFilter !== 'all') {
+            const label = this.archiveTypeFilter.charAt(0).toUpperCase() + this.archiveTypeFilter.slice(1)
+            tags += `<span class="active-filter-tag tag-type" data-filter-type="type">${label} ${xSvg}</span>`
+        }
+        if (this.archiveGrapeFilter !== 'all') {
+            const selectedOpt = document.querySelector(`[data-archive-menu="grape"] [data-value="${this.archiveGrapeFilter}"]`)
+            const label = selectedOpt?.textContent?.trim() || this.archiveGrapeFilter
+            tags += `<span class="active-filter-tag tag-grape" data-filter-type="grape">${this.escapeHtml(label)} ${xSvg}</span>`
+        }
+        if (this.archiveShopFilter !== 'all') {
+            const selectedOpt = document.querySelector(`[data-archive-menu="shop"] [data-value="${this.archiveShopFilter}"]`)
+            const label = selectedOpt?.textContent?.trim() || this.archiveShopFilter
+            tags += `<span class="active-filter-tag tag-grape" data-filter-type="shop">${this.escapeHtml(label)} ${xSvg}</span>`
+        }
+
+        const advCount = this.getArchiveAdvancedFilterCount()
+        if (advCount > 0) {
+            tags += `<span class="active-filter-tag tag-advanced" data-filter-type="advanced">+${advCount} more ${xSvg}</span>`
+        }
+
+        tagsEl.innerHTML = tags
+    }
+
+    // ============================
+    // Archive Advanced Filter Panel
+    // ============================
+
+    openArchiveAdvancedPanel() {
+        const body = document.getElementById('archiveAdvancedBody')
+        if (!body) return
+
+        const wines = this.archive
+        let html = ''
+
+        // Rebuy
+        html += `<div class="adv-filter-section"><div class="adv-filter-label">Rebuy</div><div class="adv-chip-wrap">`
+        const rebuyOptions = [['yes', 'Rebuy'], ['maybe', 'Maybe'], ['no', "Don't rebuy"]]
+        rebuyOptions.forEach(([key, label]) => {
+            const active = this.archiveAdvancedFilters.rebuy === key ? ' active' : ''
+            html += `<button class="adv-chip${active}" data-adv-type="rebuy" data-adv-value="${key}">${label}</button>`
+        })
+        html += `</div></div>`
+
+        // Region
+        const regions = new Map()
+        wines.forEach(w => {
+            if (w.region) {
+                const r = w.region.split(',')[0].trim()
+                const k = r.toLowerCase()
+                if (k && !regions.has(k)) regions.set(k, r)
+            }
+        })
+        if (regions.size > 0) {
+            html += `<div class="adv-filter-section"><div class="adv-filter-label">Region</div><div class="adv-chip-wrap">`
+            ;[...regions.entries()].sort((a, b) => a[1].localeCompare(b[1])).forEach(([key, label]) => {
+                const active = this.archiveAdvancedFilters.regions.has(key) ? ' active' : ''
+                html += `<button class="adv-chip${active}" data-adv-type="regions" data-adv-value="${key}">${this.escapeHtml(label)}</button>`
+            })
+            html += `</div></div>`
+        }
+
+        // Country
+        const countries = new Map()
+        wines.forEach(w => {
+            if (w.region) {
+                const parts = w.region.split(',').map(p => p.trim())
+                if (parts.length > 1) {
+                    const c = parts[parts.length - 1]
+                    const k = c.toLowerCase()
+                    if (k && !countries.has(k)) countries.set(k, c)
+                }
+            }
+        })
+        if (countries.size > 0) {
+            html += `<div class="adv-filter-section"><div class="adv-filter-label">Country</div><div class="adv-chip-wrap">`
+            ;[...countries.entries()].sort((a, b) => a[1].localeCompare(b[1])).forEach(([key, label]) => {
+                const active = this.archiveAdvancedFilters.countries.has(key) ? ' active' : ''
+                html += `<button class="adv-chip${active}" data-adv-type="countries" data-adv-value="${key}">${this.escapeHtml(label)}</button>`
+            })
+            html += `</div></div>`
+        }
+
+        // Producer
+        const producers = new Map()
+        wines.forEach(w => {
+            if (w.producer) {
+                const k = w.producer.toLowerCase().trim()
+                if (!producers.has(k)) producers.set(k, w.producer.trim())
+            }
+        })
+        if (producers.size > 0) {
+            html += `<div class="adv-filter-section"><div class="adv-filter-label">Producer</div><div class="adv-chip-wrap">`
+            ;[...producers.entries()].sort((a, b) => a[1].localeCompare(b[1])).forEach(([key, label]) => {
+                const active = this.archiveAdvancedFilters.producers.has(key) ? ' active' : ''
+                html += `<button class="adv-chip${active}" data-adv-type="producers" data-adv-value="${key}">${this.escapeHtml(label)}</button>`
+            })
+            html += `</div></div>`
+        }
+
+        // Vintage
+        const years = new Set()
+        wines.forEach(w => { if (w.year) years.add(w.year) })
+        if (years.size > 0) {
+            html += `<div class="adv-filter-section"><div class="adv-filter-label">Vintage</div><div class="adv-chip-wrap">`
+            ;[...years].sort((a, b) => b - a).forEach(y => {
+                const active = this.archiveAdvancedFilters.years.has(y) ? ' active' : ''
+                html += `<button class="adv-chip${active}" data-adv-type="years" data-adv-value="${y}">${y}</button>`
+            })
+            html += `</div></div>`
+        }
+
+        // Price Range
+        html += `<div class="adv-filter-section"><div class="adv-filter-label">Price Range</div><div class="adv-chip-wrap">`
+        ;[['low', '< €20'], ['mid', '€20 – €40'], ['high', '> €40']].forEach(([key, label]) => {
+            const active = this.archiveAdvancedFilters.priceRange === key ? ' active' : ''
+            html += `<button class="adv-chip${active}" data-adv-type="priceRange" data-adv-value="${key}">${label}</button>`
+        })
+        html += `</div></div>`
+
+        // Sort
+        html += `<div class="adv-filter-section"><div class="adv-filter-label">Sort</div><div class="adv-chip-wrap">`
+        ;[['name_asc', 'Name A→Z'], ['price_asc', 'Price ↑'], ['price_desc', 'Price ↓'], ['year_desc', 'Newest vintage'], ['rating_desc', 'Best rated']].forEach(([key, label]) => {
+            const active = this.archiveAdvancedFilters.sort === key ? ' active' : ''
+            html += `<button class="adv-chip${active}" data-adv-type="sort" data-adv-value="${key}">${label}</button>`
+        })
+        html += `</div></div>`
+
+        body.innerHTML = html
+
+        // Chip click handlers
+        body.querySelectorAll('.adv-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const type = chip.dataset.advType
+                const value = chip.dataset.advValue
+
+                if (type === 'rebuy' || type === 'priceRange' || type === 'sort') {
+                    // Single select: toggle
+                    const current = this.archiveAdvancedFilters[type]
+                    this.archiveAdvancedFilters[type] = current === value ? null : value
+                    body.querySelectorAll(`[data-adv-type="${type}"]`).forEach(c => c.classList.remove('active'))
+                    if (this.archiveAdvancedFilters[type] === value) chip.classList.add('active')
+                } else {
+                    // Multi select
+                    const set = this.archiveAdvancedFilters[type]
+                    const parsedVal = type === 'years' ? parseInt(value) : value
+                    if (set.has(parsedVal)) {
+                        set.delete(parsedVal)
+                        chip.classList.remove('active')
+                    } else {
+                        set.add(parsedVal)
+                        chip.classList.add('active')
+                    }
+                }
+
+                const applyBtn = document.getElementById('archiveAdvancedApply')
+                const count = this.getArchiveAdvancedFilterCount()
+                if (applyBtn) applyBtn.textContent = count > 0 ? `Apply (${count})` : 'Apply'
+            })
+        })
+
+        const applyBtn = document.getElementById('archiveAdvancedApply')
+        const count = this.getArchiveAdvancedFilterCount()
+        if (applyBtn) applyBtn.textContent = count > 0 ? `Apply (${count})` : 'Apply'
+
+        document.getElementById('archiveAdvancedModal')?.classList.add('active')
+    }
+
+    applyArchiveAdvancedFilters() {
+        document.getElementById('archiveAdvancedModal')?.classList.remove('active')
+        this.updateArchiveFilterDropdownUI()
+        this.updateArchiveActiveFilterBar()
+        this.filterAndRenderArchive()
+    }
+
+    resetArchiveAdvancedFilters() {
+        this.archiveAdvancedFilters = {
+            rebuy: null,
+            regions: new Set(),
+            countries: new Set(),
+            producers: new Set(),
+            years: new Set(),
+            priceRange: null,
+            sort: null
+        }
+        this.openArchiveAdvancedPanel()
     }
 
     renderArchiveList() {

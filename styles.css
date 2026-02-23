@@ -3056,35 +3056,7 @@ body {
 }
 
 .archive-search-container {
-    margin-bottom: var(--space-12);
-}
-
-.archive-filters {
-    display: flex;
-    gap: var(--space-8);
-    margin-bottom: var(--space-12);
-}
-
-.archive-filter-select {
-    flex: 1;
-    height: 36px;
-    padding: 0 var(--space-12);
-    border: 1px solid var(--separator-opaque);
-    border-radius: var(--radius-md);
-    font-size: var(--font-subhead);
-    font-family: var(--font-system);
-    color: var(--label-primary);
-    background: var(--bg-secondary);
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%233C3C43' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    padding-right: 30px;
-}
-
-.archive-filter-select:focus {
-    outline: none;
-    border-color: var(--wine-primary);
+    margin-bottom: 0;
 }
 
 .archive-stats {

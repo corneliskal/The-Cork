@@ -736,22 +736,88 @@
                         </div>
                     </div>
 
-                    <!-- Archive Filters -->
-                    <div class="archive-filters">
-                        <select id="archiveTypeFilter" class="archive-filter-select">
-                            <option value="">All types</option>
-                            <option value="red">Red</option>
-                            <option value="white">White</option>
-                            <option value="rosé">Rosé</option>
-                            <option value="sparkling">Sparkling</option>
-                            <option value="dessert">Dessert</option>
-                        </select>
-                        <select id="archiveRebuyFilter" class="archive-filter-select">
-                            <option value="">All ratings</option>
-                            <option value="yes">Rebuy</option>
-                            <option value="maybe">Maybe</option>
-                            <option value="no">Don't rebuy</option>
-                        </select>
+                    <!-- Archive Filter Row -->
+                    <div id="archiveFilterRow" class="filter-row" style="margin-top:var(--space-8)">
+                        <!-- Type Dropdown -->
+                        <div class="filter-dropdown" id="archiveTypeDropdown">
+                            <button class="filter-dropdown-btn" data-archive-dropdown="type">
+                                <span class="filter-dropdown-label">
+                                    <svg class="filter-dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3c-3 4.5-7 8-7 12a7 7 0 0014 0c0-4-4-7.5-7-12z"/></svg>
+                                    <span class="filter-dropdown-text" data-archive-text="type">Type</span>
+                                </span>
+                                <span class="filter-dropdown-actions">
+                                    <span class="filter-dropdown-clear hidden" data-archive-clear="type">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="10" height="10"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                    </span>
+                                    <svg class="filter-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+                                </span>
+                            </button>
+                            <div class="filter-dropdown-menu hidden" data-archive-menu="type">
+                                <button class="filter-dropdown-option" data-archive-filter="type" data-value="red"><span class="filter-opt-label"><span class="filter-type-dot dot-red"></span>Red</span></button>
+                                <button class="filter-dropdown-option" data-archive-filter="type" data-value="white"><span class="filter-opt-label"><span class="filter-type-dot dot-white"></span>White</span></button>
+                                <button class="filter-dropdown-option" data-archive-filter="type" data-value="rosé"><span class="filter-opt-label"><span class="filter-type-dot dot-rosé"></span>Rosé</span></button>
+                                <button class="filter-dropdown-option" data-archive-filter="type" data-value="sparkling"><span class="filter-opt-label"><span class="filter-type-dot dot-sparkling"></span>Sparkling</span></button>
+                                <button class="filter-dropdown-option" data-archive-filter="type" data-value="dessert"><span class="filter-opt-label"><span class="filter-type-dot dot-dessert"></span>Dessert</span></button>
+                                <button class="filter-dropdown-option" data-archive-filter="type" data-value="orange"><span class="filter-opt-label"><span class="filter-type-dot dot-orange"></span>Orange</span></button>
+                            </div>
+                        </div>
+
+                        <!-- Grape Dropdown (dynamisch) -->
+                        <div class="filter-dropdown" id="archiveGrapeDropdown">
+                            <button class="filter-dropdown-btn" data-archive-dropdown="grape">
+                                <span class="filter-dropdown-label">
+                                    <svg class="filter-dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="10" r="2.5"/><circle cx="15" cy="10" r="2.5"/><circle cx="12" cy="15" r="2.5"/><path d="M12 4v3M10 4.5c-1-1-2.5-.5-2.5-.5M14 4.5c1-1 2.5-.5 2.5-.5"/></svg>
+                                    <span class="filter-dropdown-text" data-archive-text="grape">Grape</span>
+                                </span>
+                                <span class="filter-dropdown-actions">
+                                    <span class="filter-dropdown-clear hidden" data-archive-clear="grape">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="10" height="10"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                    </span>
+                                    <svg class="filter-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+                                </span>
+                            </button>
+                            <div class="filter-dropdown-menu hidden" data-archive-menu="grape"></div>
+                        </div>
+
+                        <!-- Shop Dropdown (dynamisch) -->
+                        <div class="filter-dropdown" id="archiveShopDropdown">
+                            <button class="filter-dropdown-btn" data-archive-dropdown="shop">
+                                <span class="filter-dropdown-label">
+                                    <svg class="filter-dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    <span class="filter-dropdown-text" data-archive-text="shop">Shop</span>
+                                </span>
+                                <span class="filter-dropdown-actions">
+                                    <span class="filter-dropdown-clear hidden" data-archive-clear="shop">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="10" height="10"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                    </span>
+                                    <svg class="filter-dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+                                </span>
+                            </button>
+                            <div class="filter-dropdown-menu hidden" data-archive-menu="shop"></div>
+                        </div>
+
+                        <!-- Advanced Filter Button -->
+                        <button id="archiveAdvancedBtn" class="advanced-filter-btn" title="Advanced filters">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+                                <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+                                <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+                                <circle cx="4" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="10" r="2" fill="currentColor"/><circle cx="20" cy="14" r="2" fill="currentColor"/>
+                            </svg>
+                            <span class="advanced-filter-badge hidden" id="archiveAdvancedBadge">0</span>
+                        </button>
+                    </div>
+
+                    <!-- Archive Active Filter Bar -->
+                    <div id="archiveActiveFilterBar" class="active-filter-bar hidden">
+                        <div class="active-filter-left">
+                            <span class="active-filter-count" id="archiveActiveFilterCount">0</span>
+                            <div id="archiveActiveFilterTags" class="active-filter-tags"></div>
+                        </div>
+                        <button id="archiveClearAllFilters" class="active-filter-clear">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="10" height="10"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            Clear
+                        </button>
                     </div>
 
                     <!-- Archive Stats -->
@@ -981,6 +1047,28 @@
             </div>
         </div>
 
+        <!-- Archive Advanced Filter Modal -->
+        <div id="archiveAdvancedModal" class="modal">
+            <div class="modal-content advanced-filter-panel">
+                <div class="modal-header">
+                    <div>
+                        <h2>Advanced Filters</h2>
+                        <p class="adv-filter-subtitle">Verfijn je archief selectie</p>
+                    </div>
+                    <button class="close-btn" id="archiveAdvancedClose">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body" id="archiveAdvancedBody">
+                    <!-- Dynamically populated: Rebuy, Region, Country, Producer, Vintage, Price Range, Sort -->
+                </div>
+                <div class="adv-filter-footer">
+                    <button class="adv-filter-reset" id="archiveAdvancedReset">Reset</button>
+                    <button class="adv-filter-apply" id="archiveAdvancedApply">Apply</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Toast Notification -->
         <div id="toast" class="toast">
             <span id="toastMessage"></span>
@@ -994,7 +1082,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
-    <script src="config.js?v=84"></script>
-    <script src="app.js?v=84"></script>
+    <script src="config.js?v=85"></script>
+    <script src="app.js?v=85"></script>
 </body>
 </html>
