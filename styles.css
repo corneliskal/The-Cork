@@ -308,7 +308,7 @@ body {
     top: 44px;
     z-index: 100;
     background: var(--bg-primary);
-    padding: var(--space-12) 0 var(--space-16) 0;
+    padding: var(--space-12) 0 var(--space-8) 0;
     margin-bottom: var(--space-8);
     border-bottom: 1px solid var(--separator);
 }
