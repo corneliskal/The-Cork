@@ -3053,8 +3053,8 @@ body {
    ============================ */
 
 .archive-list-modal {
-    max-height: calc(100vh - env(safe-area-inset-top, 0px));
-    max-height: calc(100dvh - env(safe-area-inset-top, 0px));
+    max-height: calc(85vh - env(safe-area-inset-top, 0px));
+    max-height: calc(85dvh - env(safe-area-inset-top, 0px));
 }
 
 .archive-search-container {
