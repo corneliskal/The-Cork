@@ -602,19 +602,20 @@ exports.deepAnalyzeWineLabel = functions.https.onRequest(async (req, res) => {
 
     try {
         const startTime = Date.now();
-        const { name, producer, year, grape, region } = req.body;
+        const { name, producer, year, grape, region, type } = req.body;
 
         if (!name) {
             res.status(400).json({ error: 'Wine name is required' });
             return;
         }
 
-        console.log('🔍 Wine search for:', name, producer, year, grape, region);
+        console.log('🔍 Wine search for:', name, producer, year, grape, region, type ? `(type: ${type})` : '');
 
         const genAI = new GoogleGenerativeAI(geminiKey);
         const searchTerms = [name, producer, year, grape, region].filter(Boolean).join(' ');
 
-        const basePrompt = `Wine: "${searchTerms}"
+        const typeHint = type ? `\nKNOWN TYPE: ${type} (user-confirmed, do NOT change this)` : '';
+        const basePrompt = `Wine: "${searchTerms}"${typeHint}
 
 GOAL: Extract expert data into JSON.
 RULES:

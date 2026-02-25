@@ -1628,9 +1628,9 @@ class WineCellar {
                 if (deepData.expert_ratings && deepData.expert_ratings.length > 0) {
                     updates.expertRatings = deepData.expert_ratings;
                 }
-                if (deepData.type && !wineData.type) updates.type = deepData.type;
-                if (deepData.grape && !wineData.grape) updates.grape = deepData.grape;
-                if (deepData.region && !wineData.region) updates.region = deepData.region;
+                if (deepData.type) updates.type = deepData.type;
+                if (deepData.grape) updates.grape = deepData.grape;
+                if (deepData.region) updates.region = deepData.region;
                 // If quick scan missed producer and deep analysis found both name + producer,
                 // the quick scan likely used the producer name as wine name — fix both
                 if (deepData.name && deepData.producer && !wineData.producer) {
@@ -1859,7 +1859,8 @@ class WineCellar {
                 producer: wineData.producer,
                 year: wineData.year,
                 grape: wineData.grape,
-                region: wineData.region
+                region: wineData.region,
+                type: wineData.type
             })
         });
 
