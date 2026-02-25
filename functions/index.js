@@ -30,14 +30,7 @@ async function serperShoppingSearch(query, serperKey, num = 5, options = {}) {
     });
     if (!response.ok) return null;
     const data = await response.json();
-    const formatted = formatShoppingResults(data);
-    const raw = (data.shopping || []).slice(0, 3).map(item => ({
-        title: item.title || '',
-        price: item.price || '',
-        source: item.source || '',
-        link: item.link || ''
-    }));
-    return { formatted, raw };
+    return formatShoppingResults(data);
 }
 
 function formatSearchResults(data) {
@@ -379,7 +372,6 @@ If you cannot find a reliable price, return:
             let searchMethod = null;
             let hadShopping = false;
             let hadWeb = false;
-            let rawShoppingLinks = [];
 
             // Try Serper shopping + web search (cheap), fallback to Gemini grounding
             if (serperKey) {
@@ -389,13 +381,11 @@ If you cannot find a reliable price, return:
 
                 // Run shopping and web search in parallel (gl:'nl' → European/EUR results)
                 const euOptions = { gl: 'nl' };
-                const [shoppingResult, webResults] = await Promise.all([
+                const [shoppingResults, webResults] = await Promise.all([
                     serperShoppingSearch(shoppingQuery, serperKey, 5, euOptions).catch(() => null),
                     serperWebSearch(webQuery, serperKey, 5, euOptions).catch(() => null)
                 ]);
 
-                const shoppingResults = shoppingResult?.formatted || null;
-                rawShoppingLinks = shoppingResult?.raw || [];
                 hadShopping = !!shoppingResults;
                 hadWeb = !!webResults;
                 if (shoppingResults) console.log('🛒 Shopping results:\n' + shoppingResults);
@@ -456,7 +446,6 @@ If you cannot find a reliable price, return:
             res.json({
                 success: true,
                 data: priceData,
-                shoppingLinks: rawShoppingLinks,
                 searchTerms: searchTerms,
                 _log: {
                     duration: Date.now() - startTime,
