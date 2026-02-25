@@ -1153,6 +1153,13 @@ class WineCellar {
             this.promptForStore(true)
         })
 
+        // Shopping dropdown — close on click outside
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (!e.target.closest('.detail-price-fact')) {
+                document.getElementById('shoppingDropdown').style.display = 'none'
+            }
+        })
+
         // Detail modal actions
         document.getElementById('editWineBtn')?.addEventListener('click', () => this.editCurrentWine());
         document.getElementById('deleteWineBtn')?.addEventListener('click', () => this.openDeleteModal());
@@ -1661,7 +1668,12 @@ class WineCellar {
                 if (result.data && result.data.price) {
                     const roundedPrice = Math.round(result.data.price);
                     console.log('💰 Prijs gevonden (achtergrond):', roundedPrice);
-                    this.updateSavedWine(enrichId, { price: roundedPrice });
+                    const priceUpdates = { price: roundedPrice }
+                    if (result.shoppingLinks && result.shoppingLinks.length > 0) {
+                        priceUpdates.shoppingLinks = result.shoppingLinks
+                        console.log('🛒 Shopping links opgeslagen:', result.shoppingLinks.length)
+                    }
+                    this.updateSavedWine(enrichId, priceUpdates);
                 }
             }
             this.checkEnrichmentDone(enrichId);
@@ -3136,7 +3148,31 @@ class WineCellar {
         // Facts row
         document.getElementById('detailYear').textContent = wine.year || '—';
         document.getElementById('detailGrape').textContent = wine.grape || '—';
-        document.getElementById('detailPrice').textContent = wine.price ? `€${Math.round(wine.price)}` : '—';
+        const detailPriceEl = document.getElementById('detailPrice')
+        const shoppingDropdown = document.getElementById('shoppingDropdown')
+        const shoppingList = document.getElementById('shoppingDropdownList')
+        detailPriceEl.textContent = wine.price ? `€${Math.round(wine.price)}` : '—'
+        shoppingDropdown.style.display = 'none'
+        shoppingList.innerHTML = ''
+
+        if (wine.price && wine.shoppingLinks && wine.shoppingLinks.length > 0) {
+            detailPriceEl.classList.add('price-clickable')
+            detailPriceEl.onclick = (e) => {
+                e.stopPropagation()
+                const isOpen = shoppingDropdown.style.display !== 'none'
+                shoppingDropdown.style.display = isOpen ? 'none' : 'block'
+            }
+            shoppingList.innerHTML = wine.shoppingLinks.map(link => `
+                <a href="${link.link}" target="_blank" rel="noopener" class="shopping-link-item">
+                    <span class="shopping-link-source">${link.source}</span>
+                    <span class="shopping-link-price">${link.price}</span>
+                    <svg class="shopping-link-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </a>
+            `).join('')
+        } else {
+            detailPriceEl.classList.remove('price-clickable')
+            detailPriceEl.onclick = null
+        }
 
         // Alcohol
         const alcoholFact = document.getElementById('detailAlcoholFact');
